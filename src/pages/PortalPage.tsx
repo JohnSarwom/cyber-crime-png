@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { useCases } from '../lib/store'
 import {
@@ -84,8 +85,9 @@ function emptyForm(): ComplaintInput {
 
 function WorkflowTracker({ stage, decision }: { stage: CaseRecord['stage']; decision?: CaseRecord['decision'] }) {
   const current = STAGE_INDEX[stage]
+  const progress = `${(current / (STAGES.length - 1)) * 100}%`
   return (
-    <ol className="portal-flow" aria-label="Complaint progress">
+    <ol className="portal-flow" aria-label="Complaint progress" style={{ '--flow-progress': progress } as CSSProperties}>
       {STAGES.map((s, i) => {
         const state = i < current ? 'done' : i === current ? 'current' : 'pending'
         return (

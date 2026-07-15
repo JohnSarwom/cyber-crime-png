@@ -1465,16 +1465,16 @@ button { cursor: pointer; }
 .portal-flow-overview > p, .portal-track > p { margin: 0 0 18px; font-size: 14px; color: var(--color-ink-300); }
 
 /* Workflow tracker */
-.portal-flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.portal-flow-step { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 12px 12px 12px 0; }
-.portal-flow-step::before { content: ''; position: absolute; left: 17px; top: 38px; bottom: -4px; width: 2px; background: rgba(90, 140, 210, .25); }
-.portal-flow-step:last-child::before { display: none; }
-.portal-flow-node { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font: 800 14px/1 var(--font-display); background: rgba(10, 22, 50, .7); color: var(--color-ink-400); border: 2px solid rgba(90, 140, 210, .35); }
+.portal-flow { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.portal-flow::before, .portal-flow::after { content: ''; position: absolute; z-index: 0; left: 17px; top: 30px; width: 2px; border-radius: 999px; }
+.portal-flow::before { bottom: 30px; background: rgba(90, 140, 210, .34); }
+.portal-flow::after { height: calc((100% - 60px) * var(--flow-progress, 0%)); background: linear-gradient(180deg, var(--color-status-good), rgba(24, 182, 48, .62)); box-shadow: 0 0 7px rgba(24, 182, 48, .34); }
+.portal-flow-step { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; padding: 12px 12px 12px 0; }
+.portal-flow-node { position: relative; z-index: 2; flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font: 800 14px/1 var(--font-display); background: #091a38; color: var(--color-ink-400); border: 2px solid rgba(90, 140, 210, .48); }
 .portal-flow-copy { display: flex; flex-direction: column; gap: 3px; padding-top: 4px; }
 .portal-flow-copy strong { font: 700 14px/1.2 var(--font-display); color: var(--color-ink-200); }
 .portal-flow-copy small { font-size: 12.5px; line-height: 1.45; color: var(--color-ink-400); }
 .portal-flow-step.done .portal-flow-node { background: rgba(24, 182, 48, .16); border-color: var(--color-status-good); color: var(--color-status-good); }
-.portal-flow-step.done::before { background: var(--color-status-good); opacity: .5; }
 .portal-flow-step.current .portal-flow-node { background: linear-gradient(180deg, var(--color-cyber-400), var(--color-cyber-500)); border-color: var(--color-cyan-glow); color: #fff; box-shadow: 0 0 0 4px rgba(0, 198, 255, .16); }
 .portal-flow-step.current .portal-flow-copy strong { color: var(--color-ink-100); }
 .portal-flow-step.current .portal-flow-copy small { color: var(--color-cyan-soft); }
