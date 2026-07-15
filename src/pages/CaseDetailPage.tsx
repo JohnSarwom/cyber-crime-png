@@ -74,9 +74,14 @@ export default function CaseDetailPage() {
         <div className="case-secondary-grid">
           <SecondaryPanel title="Parties">
             <DetailRow label="Complainant" value={c.complainant.name} />
+            <DetailRow label="Address" value={c.complainant.address} />
             <DetailRow label="Contact" value={<span className="tabular">{c.complainant.contact}</span>} />
             <DetailRow label="Email" value={c.complainant.email} />
             <DetailRow label="Victim" value={c.victimSameAsComplainant ? `${c.complainant.name} (same as complainant)` : c.victimName} />
+            {!c.victimSameAsComplainant && <DetailRow label="Relationship" value={c.victimRelationship} />}
+            <DetailRow label="Incident date" value={c.incidentDate ? fmtDate(c.incidentDate) : undefined} />
+            <DetailRow label="Offender contact" value={c.offenderContact} />
+            <DetailRow label="Relief sought" value={c.reliefSought?.length ? c.reliefSought.map((id) => ({ investigation: 'Investigation', contentRemoval: 'Content removal', prosecution: 'Prosecution', protectionOrder: 'Protection order' }[id] ?? id)).join(', ') : undefined} />
           </SecondaryPanel>
 
           <SecondaryPanel id="case-evidence-detail" title="Evidence detail">
@@ -87,6 +92,7 @@ export default function CaseDetailPage() {
               })}
             </ul>
             <p className="case-panel-note">{c.attachedFileCount} file{c.attachedFileCount === 1 ? '' : 's'} attached to the complaint.</p>
+            {!!c.evidenceFiles?.length && <ul className="case-evidence-files">{c.evidenceFiles.map((file) => <li key={`${file.name}-${file.size}`}><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small></li>)}</ul>}
           </SecondaryPanel>
 
           <SecondaryPanel id="case-decision" title="Decision & penalty">

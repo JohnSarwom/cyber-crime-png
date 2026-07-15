@@ -107,6 +107,13 @@ export default function Layout() {
           </div>
 
           <div className="utility-actions">
+            <div className="portal-switch bar" role="group" aria-label="View mode">
+              <span className="portal-switch-active">Officer Dashboard</span>
+              <Link to="/portal" className="portal-switch-alt" title="Open the public complaint portal">
+                <User width={14} height={14} />Client Portal
+              </Link>
+            </div>
+
             <details className="utility-menu notification-menu">
               <summary aria-label={`${priorityCases.length} priority notifications`}><Bell width={20} height={20} /><i>{priorityCases.length}</i></summary>
               <div className="utility-popover notification-popover">

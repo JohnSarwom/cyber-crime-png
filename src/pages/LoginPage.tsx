@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/authStore'
 import { ShieldLock, Lock, User, Eye, EyeOff } from '../components/icons'
 
@@ -191,6 +191,9 @@ export default function LoginPage() {
 
           <p className="login-footnote">
             Demonstration login. Access is restricted to authorised RPNGC Cyber Unit officers.
+          </p>
+          <p className="login-portal-link">
+            Are you a member of the public? <Link to="/portal">Report a cyber harassment incident →</Link>
           </p>
         </div>
       </div>

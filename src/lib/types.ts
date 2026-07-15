@@ -14,6 +14,12 @@ export type DecisionOutcome = 'misdemeanour' | 'serious_harm' | 'death_resulting
 
 export type Platform = 'Facebook' | 'WhatsApp' | 'TikTok' | 'Instagram' | 'Other'
 
+export interface EvidenceFileMeta {
+  name: string
+  size: number
+  type: string
+}
+
 export interface CourtDetails {
   court?: string
   nextHearingAt?: string
@@ -43,10 +49,13 @@ export interface CaseRecord {
   platform: Platform
   province: string
 
-  complainant: { name: string; contact: string; email: string }
+  complainant: { name: string; contact: string; email: string; address?: string }
   victimSameAsComplainant: boolean
   victimName?: string
+  victimRelationship?: string
   offenderAlias?: string
+  offenderContact?: string
+  incidentDate?: string
 
   natureSummary: string
   impactSummary: string
@@ -54,6 +63,8 @@ export interface CaseRecord {
   /** Evidence checklist ids ticked on the complaint form. */
   evidence: string[]
   attachedFileCount: number
+  evidenceFiles?: EvidenceFileMeta[]
+  reliefSought?: string[]
 
   assignedTo?: string
   decision?: DecisionOutcome
@@ -63,4 +74,35 @@ export interface CaseRecord {
 
   timeline: TimelineEvent[]
   notes: CaseNote[]
+
+  /** True for records lodged through the public client portal (vs. seeded demo data). */
+  source?: 'portal' | 'demo'
+}
+
+/**
+ * Data captured by the public client portal intake wizard. This is the citizen-
+ * facing slice of a complaint — everything an officer later adds (assignment,
+ * decision, court, remedies) is populated through the dashboard workflow.
+ */
+export interface ComplaintInput {
+  platform: Platform
+  province: string
+  /** ISO date the incident occurred (from a date input). */
+  incidentDate: string
+  offenderAlias?: string
+  offenderContact?: string
+  natureSummary: string
+  impactSummary: string
+  /** Citizen self-assessed severity; maps to case priority. */
+  severity: 'low' | 'medium' | 'high'
+  /** Someone is in immediate danger — escalates the case to critical. */
+  immediateDanger: boolean
+  evidence: string[]
+  attachedFileCount: number
+  evidenceFiles: EvidenceFileMeta[]
+  reliefSought: string[]
+  complainant: { name: string; contact: string; email: string; address: string }
+  victimSameAsComplainant: boolean
+  victimName?: string
+  victimRelationship?: string
 }

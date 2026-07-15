@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
+import PortalPage from './pages/PortalPage'
 import OverviewPage from './pages/OverviewPage'
 import CasesPage from './pages/CasesPage'
 import CaseDetailPage from './pages/CaseDetailPage'
@@ -16,6 +17,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Public citizen-facing complaint portal (no officer session required) */}
+      <Route path="/portal" element={<PortalPage />} />
 
       {/* Everything below requires an authenticated officer session */}
       <Route element={<ProtectedRoute />}>
