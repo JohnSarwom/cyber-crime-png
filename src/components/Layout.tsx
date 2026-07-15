@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { CURRENT_OFFICER, useCases } from '../lib/store'
 import { useAuth } from '../lib/authStore'
-import { applyFont, FONT_OPTIONS, getSavedFont, type FontName } from '../lib/fonts'
 import {
   Analytics, Bell, Folder, Grid, Logout, Reports, Search, Settings, User, Users,
 } from './icons'
@@ -22,12 +21,6 @@ export default function Layout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [selectedFont, setSelectedFont] = useState<FontName>(getSavedFont)
-
-  function handleFontChange(fontName: FontName) {
-    setSelectedFont(fontName)
-    applyFont(fontName)
-  }
 
   function handleLogout() {
     logout()
@@ -114,37 +107,6 @@ export default function Layout() {
           </div>
 
           <div className="utility-actions">
-            <details className="utility-menu font-menu">
-              <summary aria-label={`Change dashboard font. Current font: ${selectedFont}`} title="Change dashboard font">
-                <span className="font-menu-mark">Aa</span>
-                <span className="font-menu-current">{selectedFont}</span>
-                <span className="font-menu-chevron" aria-hidden="true">⌄</span>
-              </summary>
-              <div className="utility-popover font-popover">
-                <div className="font-popover-head">
-                  <span><b>Dashboard font</b><small>Preview and choose the best fit</small></span>
-                  <em>{selectedFont}</em>
-                </div>
-                <div className="font-option-list" role="radiogroup" aria-label="Dashboard font">
-                  {FONT_OPTIONS.map((font) => (
-                    <button
-                      key={font.name}
-                      type="button"
-                      role="radio"
-                      aria-checked={selectedFont === font.name}
-                      className={selectedFont === font.name ? 'active' : ''}
-                      style={{ fontFamily: font.family }}
-                      onClick={() => handleFontChange(font.name)}
-                    >
-                      <span><strong>{font.name}</strong><small>{font.use}</small></span>
-                      <i aria-hidden="true">{selectedFont === font.name ? '✓' : 'Aa'}</i>
-                    </button>
-                  ))}
-                </div>
-                <p className="font-popover-note">Changes apply instantly across the application.</p>
-              </div>
-            </details>
-
             <details className="utility-menu notification-menu">
               <summary aria-label={`${priorityCases.length} priority notifications`}><Bell width={20} height={20} /><i>{priorityCases.length}</i></summary>
               <div className="utility-popover notification-popover">
