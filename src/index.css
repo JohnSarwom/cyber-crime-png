@@ -92,7 +92,7 @@ button { cursor: pointer; }
 .side-link:hover { color: #fff; }
 .side-link:hover .nav-icon { background: rgba(16, 63, 112, .55); transform: translateY(-1px); }
 .side-link.active { color: #08caff; }
-.side-link.active .nav-icon { border-color: rgba(0, 157, 243, .58); background: linear-gradient(145deg, rgba(0, 118, 224, .32), rgba(11, 54, 112, .64)); box-shadow: inset 2px 0 #03d3ff, 0 0 20px rgba(0, 123, 235, .22); }
+.side-link.active .nav-icon { border-color: rgba(0, 157, 243, .58); background: linear-gradient(145deg, rgba(0, 118, 224, .32), rgba(11, 54, 112, .64)); box-shadow: 0 0 20px rgba(0, 123, 235, .22); }
 .sidebar-bottom { width: 100%; flex: none; margin-top: auto; padding: 12px 0 20px; display: flex; flex-direction: column; align-items: center; border-top: 1px solid rgba(61, 112, 171, .2); }
 .sidebar-profile-nav { cursor: default; }
 .officer-avatar { width: 44px; height: 44px; position: relative; flex: none; border: 1px solid rgba(0, 153, 238, .34); border-radius: 50%; display: grid; place-items: center; color: #00bdff; background: linear-gradient(145deg, #073d78, #071d3d); }
