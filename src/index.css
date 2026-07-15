@@ -1040,7 +1040,7 @@ button { cursor: pointer; }
   box-shadow: 0 0 7px rgba(0, 148, 255, .18);
 }
 .case-workflow__step { min-width: 0; position: relative; z-index: 1; padding: 31px 5px 7px; display: flex; flex-direction: column; align-items: center; color: #9aacca; text-align: center; }
-.case-workflow__step::before { content: ''; position: absolute; z-index: -1; inset: 25px 2px 0; border: 1px solid transparent; border-radius: 11px; pointer-events: none; }
+.case-workflow__step::before { content: ''; position: absolute; z-index: -1; inset: 25px 2px 0; opacity: 0; border: 1px solid transparent; border-radius: 11px; pointer-events: none; transform: translateY(5px) scale(.965); transform-origin: 50% 58%; transition: opacity 360ms ease, transform 420ms cubic-bezier(.22, 1, .36, 1); }
 .case-workflow__step.is-current::before {
   border-color: #159cff;
   background:
@@ -1061,17 +1061,30 @@ button { cursor: pointer; }
   inset: 29px 6px 4px;
   border: 1px solid rgba(90, 190, 255, .13);
   border-radius: 8px;
+  opacity: 0;
   pointer-events: none;
   box-shadow: inset 0 0 14px rgba(0, 137, 255, .06);
+  transform: translateY(5px) scale(.97);
+  transform-origin: 50% 58%;
+  transition: opacity 420ms ease 45ms, transform 460ms cubic-bezier(.22, 1, .36, 1) 45ms;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, rgba(0, 0, 0, .1) 32%, rgba(0, 0, 0, .52) 46%, #000 61%);
   mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, rgba(0, 0, 0, .1) 32%, rgba(0, 0, 0, .52) 46%, #000 61%);
 }
-.case-workflow__current-label { position: absolute; top: -24px; left: 50%; min-width: 116px; min-height: 34px; padding: 0 10px; display: grid; place-items: center; border: 1px solid rgba(55, 112, 174, .55); border-radius: 8px; color: #b9d7f5; background: #09203d; font-size: 13px; white-space: nowrap; transform: translateX(-50%); }
+.case-workflow__step.is-current:hover::before, .case-workflow__step.is-current:focus-visible::before { opacity: 1; transform: translateY(0) scale(1); }
+.case-workflow__step.is-current:hover::after, .case-workflow__step.is-current:focus-visible::after { opacity: 1; transform: translateY(0) scale(1); }
+.case-workflow__step.is-current:focus-visible { outline: 0; }
+.case-workflow__current-label { position: absolute; top: -24px; left: 50%; min-width: 116px; min-height: 34px; padding: 0 10px; display: grid; place-items: center; visibility: hidden; opacity: 0; border: 1px solid rgba(55, 112, 174, .55); border-radius: 8px; color: #b9d7f5; background: #09203d; box-shadow: 0 10px 24px rgba(0, 0, 0, .25); font-size: 13px; white-space: nowrap; pointer-events: none; transform: translate(-50%, 8px) scale(.96); transform-origin: 50% 100%; transition: opacity 220ms ease, transform 320ms cubic-bezier(.22, 1, .36, 1), visibility 0s linear 320ms; }
 .case-workflow__current-label::after { content: ''; position: absolute; bottom: -7px; width: 12px; height: 12px; border-right: 1px solid rgba(55, 112, 174, .55); border-bottom: 1px solid rgba(55, 112, 174, .55); background: #09203d; transform: rotate(45deg); }
+.case-workflow__step.is-current:hover .case-workflow__current-label, .case-workflow__step.is-current:focus-visible .case-workflow__current-label { visibility: visible; opacity: 1; transform: translate(-50%, 0) scale(1); transition-delay: 70ms, 70ms, 0s; }
 .case-workflow__node { width: 30px; height: 30px; flex: none; position: relative; display: grid; place-items: center; border: 3px solid #203a5d; border-radius: 50%; color: #031126; background: #07162c; }
 .case-workflow__step.is-complete .case-workflow__node, .case-workflow__step.is-current .case-workflow__node { border-color: #2591f5; background: #2591f5; }
-.case-workflow__step.is-current .case-workflow__node { color: #d8f3ff; border: 2px solid #72d4ff; background: radial-gradient(circle at 50% 42%, #147dda, #0758ab 72%); box-shadow: 0 0 0 4px rgba(0, 91, 186, .72), 0 0 0 6px rgba(39, 164, 255, .46), 0 0 20px 4px rgba(0, 157, 255, .42), inset 0 0 8px rgba(156, 228, 255, .24); }
+.case-workflow__step.is-current .case-workflow__node { color: #d8f3ff; border: 2px solid #72d4ff; background: radial-gradient(circle at 50% 42%, #147dda, #0758ab 72%); box-shadow: 0 0 0 3px rgba(25, 135, 232, .34), 0 0 11px 1px rgba(0, 157, 255, .2), inset 0 0 8px rgba(156, 228, 255, .24); animation: case-current-stage-pulse 3.8s ease-in-out infinite; transition: box-shadow 360ms ease, transform 360ms cubic-bezier(.22, 1, .36, 1); }
+.case-workflow__step.is-current:hover .case-workflow__node, .case-workflow__step.is-current:focus-visible .case-workflow__node { animation: none; box-shadow: 0 0 0 4px rgba(0, 91, 186, .72), 0 0 0 6px rgba(39, 164, 255, .46), 0 0 20px 4px rgba(0, 157, 255, .42), inset 0 0 8px rgba(156, 228, 255, .24); transform: scale(1.04); }
 .case-workflow__step.is-current .case-workflow__node::after { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(191, 238, 255, .42); border-radius: 50%; pointer-events: none; }
+@keyframes case-current-stage-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(25, 135, 232, .28), 0 0 9px 1px rgba(0, 157, 255, .16), inset 0 0 8px rgba(156, 228, 255, .22); }
+  50% { box-shadow: 0 0 0 4px rgba(25, 147, 244, .42), 0 0 16px 2px rgba(0, 174, 255, .3), inset 0 0 10px rgba(156, 228, 255, .28); }
+}
 .case-workflow__label { margin-top: 10px; color: #d8e2f2; font-size: 16px; line-height: 1.15; white-space: nowrap; }
 .case-workflow__step.is-pending .case-workflow__label { color: #93a2bd; }
 .case-workflow__icon { margin: 17px 0 10px; color: #91a8ca; stroke-width: 1.45; filter: drop-shadow(0 4px 8px rgba(0,0,0,.28)); }

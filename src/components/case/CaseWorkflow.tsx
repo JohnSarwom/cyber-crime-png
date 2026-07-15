@@ -25,6 +25,7 @@ export function CaseWorkflow({ caseRecord }: { caseRecord: CaseRecord }) {
               className={`case-workflow__step is-${state}`}
               aria-current={state === 'current' ? 'step' : undefined}
               aria-label={`${stage.short}, ${state}${date ? `, ${fmtDate(date)}` : ', pending'}`}
+              tabIndex={state === 'current' ? 0 : undefined}
             >
               {state === 'current' && <span className="case-workflow__current-label">Current Stage</span>}
               <span className="case-workflow__node" aria-hidden="true">
