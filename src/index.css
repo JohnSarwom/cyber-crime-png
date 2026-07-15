@@ -1504,6 +1504,10 @@ button { cursor: pointer; }
 .portal-file-list li, .case-evidence-files li { min-width: 0; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid rgba(64, 116, 177, .22); border-radius: 8px; color: var(--color-ink-200); background: rgba(4, 14, 32, .38); font-size: 11px; }
 .portal-file-list li span, .case-evidence-files li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .portal-file-list li small, .case-evidence-files li small { flex: none; color: var(--color-ink-400); }
+.portal-file-actions { flex: none; display: inline-flex; align-items: center; gap: 9px; overflow: visible !important; }
+.portal-file-actions button { width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border: 1px solid rgba(231, 79, 91, .38); border-radius: 7px; color: #ff8b94; background: rgba(115, 22, 36, .28); font-size: 18px; line-height: 1; }
+.portal-file-actions button:hover { border-color: #ff7480; color: #fff; background: rgba(174, 38, 54, .5); }
+.portal-file-actions button:focus-visible { outline: 2px solid #ff8b94; outline-offset: 2px; }
 .case-evidence-files { margin-top: 10px; }
 .portal-relief { margin: 0; padding: 0; border: 0; }
 .portal-relief legend { margin-bottom: 9px; color: var(--color-ink-200); font-size: 12.5px; font-weight: 600; }

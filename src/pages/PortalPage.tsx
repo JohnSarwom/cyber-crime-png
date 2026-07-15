@@ -183,6 +183,13 @@ export default function PortalPage() {
     setForm((current) => ({ ...current, evidenceFiles: selected, attachedFileCount: selected.length }))
   }
 
+  function removeFile(index: number) {
+    setForm((current) => {
+      const evidenceFiles = current.evidenceFiles.filter((_, fileIndex) => fileIndex !== index)
+      return { ...current, evidenceFiles, attachedFileCount: evidenceFiles.length }
+    })
+  }
+
   function toggleRelief(id: string) {
     setForm((current) => ({
       ...current,
@@ -361,7 +368,13 @@ export default function PortalPage() {
                     <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={(e) => selectFiles(e.target.files)} />
                   </label>
                   {!!form.evidenceFiles.length && <ul className="portal-file-list">
-                    {form.evidenceFiles.map((file) => <li key={`${file.name}-${file.size}`}><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small></li>)}
+                    {form.evidenceFiles.map((file, index) => <li key={`${file.name}-${file.size}-${index}`}>
+                      <span>{file.name}</span>
+                      <span className="portal-file-actions">
+                        <small>{Math.max(1, Math.round(file.size / 1024))} KB</small>
+                        <button type="button" onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`} title="Remove attachment">×</button>
+                      </span>
+                    </li>)}
                   </ul>}
                   <p className="portal-note">
                     <ShieldLock width={14} height={14} />
