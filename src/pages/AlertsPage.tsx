@@ -4,10 +4,12 @@ import { Alert, Bell, Check, Chevron, Clock, Folder, Search, ShieldLock, User } 
 import { PriorityBadge, StageBadge } from '../components/badges'
 import { fmtDateTime } from '../lib/format'
 import { useCases } from '../lib/store'
+import { useAuth } from '../lib/authStore'
+import { stageOf } from '../lib/pipeline'
 
 const DAY = 86_400_000
 type Severity = 'critical' | 'high' | 'medium' | 'info'
-type AlertCategory = 'Risk' | 'Assignment' | 'Evidence' | 'Ageing' | 'Intake'
+type AlertCategory = 'Risk' | 'Assignment' | 'Approval' | 'Evidence' | 'Ageing' | 'Intake'
 
 interface OperationalAlert {
   id: string
@@ -24,6 +26,7 @@ const severityRank: Record<Severity, number> = { critical: 4, high: 3, medium: 2
 
 export default function AlertsPage() {
   const { cases } = useCases()
+  const { activeOfficer } = useAuth()
   const [severity, setSeverity] = useState<'all' | Severity>('all')
   const [status, setStatus] = useState<'active' | 'acknowledged' | 'all'>('active')
   const [query, setQuery] = useState('')
@@ -36,6 +39,14 @@ export default function AlertsPage() {
     const items: OperationalAlert[] = []
     for (const item of cases) {
       const age = (newestCaseTime - new Date(item.filedAt).getTime()) / DAY
+      if (item.pendingApproval?.assignedTo === activeOfficer.name) {
+        items.push({ id: `${item.id}-approval-${item.pendingApproval.requestedAt}`, caseId: item.id, ref: item.ref, severity: 'high', category: 'Approval', title: `${stageOf(item.pendingApproval.targetStage).label} approval required`, message: `${item.pendingApproval.requestedBy} submitted this case for approval. ${item.pendingApproval.submissionComment}`, timestamp: item.pendingApproval.requestedAt })
+      }
+      const approvalHistory = item.approvalHistory ?? []
+      const latestApproval = approvalHistory[approvalHistory.length - 1]
+      if (!item.pendingApproval && latestApproval?.status === 'returned' && latestApproval.requestedBy === activeOfficer.name) {
+        items.push({ id: `${item.id}-returned-${latestApproval.reviewedAt}`, caseId: item.id, ref: item.ref, severity: 'medium', category: 'Approval', title: 'Case returned for changes', message: `${latestApproval.reviewedBy} returned the ${stageOf(latestApproval.targetStage).label} request: ${latestApproval.reviewComment}`, timestamp: latestApproval.reviewedAt })
+      }
       if (item.priority === 'critical') {
         items.push({ id: `${item.id}-critical`, caseId: item.id, ref: item.ref, severity: 'critical', category: 'Risk', title: 'Critical-risk complaint requires review', message: `${item.natureSummary}. Immediate supervisory review and victim-safety assessment recommended.`, timestamp: item.filedAt })
       }
@@ -53,7 +64,7 @@ export default function AlertsPage() {
       }
     }
     return items.sort((a, b) => severityRank[b.severity] - severityRank[a.severity] || b.timestamp.localeCompare(a.timestamp))
-  }, [cases, newestCaseTime])
+  }, [cases, newestCaseTime, activeOfficer.name])
 
   const available = alerts.filter((item) => !dismissed.has(item.id))
   const filtered = available.filter((item) => {

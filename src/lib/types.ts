@@ -41,6 +41,21 @@ export interface CaseNote {
   attachments?: EvidenceFileMeta[]
 }
 
+export interface ApprovalRequest {
+  targetStage: CaseStage
+  requestedBy: string
+  requestedAt: string
+  assignedTo: string
+  submissionComment: string
+}
+
+export interface ApprovalHistoryEntry extends ApprovalRequest {
+  status: 'approved' | 'returned'
+  reviewedBy: string
+  reviewedAt: string
+  reviewComment: string
+}
+
 export interface CaseRecord {
   id: string
   ref: string // e.g. RPNGC-2026-000123
@@ -68,6 +83,9 @@ export interface CaseRecord {
   reliefSought?: string[]
 
   assignedTo?: string
+  /** The case owner remains assigned while this separate task routes to an approver. */
+  pendingApproval?: ApprovalRequest
+  approvalHistory?: ApprovalHistoryEntry[]
   decision?: DecisionOutcome
   /** Optional while existing locally persisted demo records migrate lazily. */
   court?: CourtDetails

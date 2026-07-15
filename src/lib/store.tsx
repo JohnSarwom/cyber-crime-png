@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { CaseRecord, CaseStage, ComplaintInput, DecisionOutcome, EvidenceFileMeta } from './types'
 import { generateCases } from './mock'
-import { nextStage } from './pipeline'
+import { nextStage, stageOf } from './pipeline'
 import { useAuth } from './authStore'
 
 const STORAGE_KEY = 'rpngc-cases-v1'
@@ -9,13 +9,30 @@ const STORAGE_KEY = 'rpngc-cases-v1'
 interface CaseContextValue {
   cases: CaseRecord[]
   allCases: CaseRecord[]
-  advance: (id: string, note?: string) => void
+  submitForApproval: (id: string, comment: string) => void
+  approveRequest: (id: string, comment: string) => void
+  returnRequest: (id: string, comment: string) => void
   assign: (id: string, officer: string) => void
   addNote: (id: string, text: string, attachments?: EvidenceFileMeta[]) => void
   setDecision: (id: string, decision: DecisionOutcome) => void
   /** Lodge a complaint from the public client portal; returns the created record. */
   submitComplaint: (input: ComplaintInput) => CaseRecord
   resetData: () => void
+}
+
+const APPROVER_BY_STAGE: Partial<Record<CaseStage, string>> = {
+  evidence_review: 'Sgt. R. Auali',
+  investigation: 'Sgt. M. Kaupa',
+  charges_filed: 'Sgt. M. Kaupa',
+  in_court: 'Insp. L. Waiko',
+  resolved: 'Insp. L. Waiko',
+}
+
+function approvalAssignee(target: CaseStage, requester: string) {
+  const preferred = APPROVER_BY_STAGE[target] ?? 'Insp. L. Waiko'
+  if (preferred !== requester) return preferred
+  const alternate = preferred === 'Sgt. M. Kaupa' ? 'Sgt. R. Auali' : 'Insp. L. Waiko'
+  return alternate !== requester ? alternate : 'Sgt. M. Kaupa'
 }
 
 /** Next sequential case reference, continuing from the highest existing number. */
@@ -65,21 +82,50 @@ export function CaseProvider({ children }: { children: ReactNode }) {
     return {
       cases,
       allCases,
-      advance: (id, note) =>
+      submitForApproval: (id, comment) =>
         update((prev) =>
           prev.map((c) => {
             if (c.id !== id) return c
             const to = nextStage(c.stage)
-            if (!to) return c
-            const event = {
-              stage: to as CaseStage,
-              date: new Date().toISOString(),
-              officer: activeOfficer.name,
-              note,
+            if (!to || c.pendingApproval || c.assignedTo !== activeOfficer.name) return c
+            return {
+              ...c,
+              pendingApproval: {
+                targetStage: to,
+                requestedBy: activeOfficer.name,
+                requestedAt: new Date().toISOString(),
+                assignedTo: approvalAssignee(to, activeOfficer.name),
+                submissionComment: comment,
+              },
             }
-            return { ...c, stage: to, timeline: [...c.timeline, event] }
           }),
         ),
+      approveRequest: (id, comment) =>
+        update((prev) => prev.map((c) => {
+          const request = c.pendingApproval
+          if (c.id !== id || !request || (request.assignedTo !== activeOfficer.name && activeOfficer.role !== 'Administrator')) return c
+          const now = new Date().toISOString()
+          return {
+            ...c,
+            stage: request.targetStage,
+            pendingApproval: undefined,
+            approvalHistory: [...(c.approvalHistory ?? []), { ...request, status: 'approved', reviewedBy: activeOfficer.name, reviewedAt: now, reviewComment: comment }],
+            timeline: [...c.timeline, { stage: request.targetStage, date: now, officer: activeOfficer.name, note: `Approved: ${comment}` }],
+            notes: [...c.notes, { date: now, officer: activeOfficer.name, text: `Approved for ${stageOf(request.targetStage).label}: ${comment}` }],
+          }
+        })),
+      returnRequest: (id, comment) =>
+        update((prev) => prev.map((c) => {
+          const request = c.pendingApproval
+          if (c.id !== id || !request || (request.assignedTo !== activeOfficer.name && activeOfficer.role !== 'Administrator')) return c
+          const now = new Date().toISOString()
+          return {
+            ...c,
+            pendingApproval: undefined,
+            approvalHistory: [...(c.approvalHistory ?? []), { ...request, status: 'returned', reviewedBy: activeOfficer.name, reviewedAt: now, reviewComment: comment }],
+            notes: [...c.notes, { date: now, officer: activeOfficer.name, text: `Returned for changes before ${stageOf(request.targetStage).label}: ${comment}` }],
+          }
+        })),
       assign: (id, officer) =>
         update((prev) => prev.map((c) => (c.id === id ? { ...c, assignedTo: officer } : c))),
       addNote: (id, text, attachments = []) =>
@@ -124,6 +170,8 @@ export function CaseProvider({ children }: { children: ReactNode }) {
           evidenceFiles: input.evidenceFiles,
           reliefSought: input.reliefSought,
           assignedTo: undefined,
+          pendingApproval: undefined,
+          approvalHistory: [],
           decision: undefined,
           court: undefined,
           remedies: { contentRemoval: false, protectionOrder: false },
@@ -141,7 +189,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
         setAllCases(generateCases())
       },
     }
-  }, [cases, allCases, activeOfficer.name])
+  }, [cases, allCases, activeOfficer.name, activeOfficer.role])
 
   return <CaseContext.Provider value={value}>{children}</CaseContext.Provider>
 }

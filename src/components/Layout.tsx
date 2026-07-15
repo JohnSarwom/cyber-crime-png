@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCases } from '../lib/store'
 import { OFFICER_ACCOUNTS, officerInitials, useAuth } from '../lib/authStore'
+import { stageOf } from '../lib/pipeline'
 import {
   Analytics, Bell, Folder, Grid, Logout, Reports, Search, Settings, User, Users,
 } from './icons'
@@ -68,6 +69,9 @@ export default function Layout() {
     return cases.filter((item) => `${item.ref} ${item.complainant.name} ${item.platform} ${item.province} ${item.assignedTo ?? ''}`.toLowerCase().includes(query)).slice(0, 6)
   }, [cases, searchQuery])
   const priorityCases = useMemo(() => cases.filter((item) => (item.priority === 'critical' || item.priority === 'high') && item.stage !== 'resolved').slice(0, 4), [cases])
+  const approvalCases = useMemo(() => cases.filter((item) => item.pendingApproval?.assignedTo === activeOfficer.name).slice(0, 4), [cases, activeOfficer.name])
+  const returnedCases = useMemo(() => cases.filter((item) => { const history = item.approvalHistory ?? []; const latest = history[history.length - 1]; return !item.pendingApproval && latest?.status === 'returned' && latest.requestedBy === activeOfficer.name }).slice(0, 4), [cases, activeOfficer.name])
+  const notificationCount = approvalCases.length + returnedCases.length + priorityCases.length
 
   function openFirstResult() {
     if (!searchResults[0]) return
@@ -149,11 +153,15 @@ export default function Layout() {
             </div>
 
             <details ref={notificationMenuRef} className="utility-menu notification-menu" onToggle={(event) => { if (event.currentTarget.open && profileMenuRef.current) profileMenuRef.current.open = false }}>
-              <summary aria-label={`${priorityCases.length} priority notifications`}><Bell width={20} height={20} /><i>{priorityCases.length}</i></summary>
+              <summary aria-label={`${notificationCount} notifications`}><Bell width={20} height={20} /><i>{notificationCount}</i></summary>
               <div className="utility-popover notification-popover">
-                <div className="utility-popover-head"><span><b>Notifications</b><small>Priority case activity</small></span><Link to="/alerts" onClick={closeUtilityMenus}>View all</Link></div>
-                <div className="notification-list">{priorityCases.map((item) => <Link to={`/cases/${item.id}`} key={item.id} onClick={closeUtilityMenus}><i className={item.priority} /><span><strong>{item.priority === 'critical' ? 'Critical' : 'High-risk'} case requires review</strong><small>{item.ref} · {item.province}</small></span><em>Now</em></Link>)}</div>
-                {!priorityCases.length && <p className="utility-empty">No priority notifications.</p>}
+                <div className="utility-popover-head"><span><b>Notifications</b><small>Approvals and priority activity</small></span><Link to="/alerts" onClick={closeUtilityMenus}>View all</Link></div>
+                <div className="notification-list">
+                  {approvalCases.map((item) => <Link to={`/cases/${item.id}`} key={`${item.id}-approval`} onClick={closeUtilityMenus}><i className="approval" /><span><strong>{stageOf(item.pendingApproval!.targetStage).label} approval required</strong><small>{item.ref} · from {item.pendingApproval!.requestedBy}</small></span><em>Review</em></Link>)}
+                  {returnedCases.map((item) => { const history = item.approvalHistory ?? []; const latest = history[history.length - 1]!; return <Link to={`/cases/${item.id}`} key={`${item.id}-returned`} onClick={closeUtilityMenus}><i className="returned" /><span><strong>Changes requested</strong><small>{item.ref} · by {latest.reviewedBy}</small></span><em>Update</em></Link> })}
+                  {priorityCases.map((item) => <Link to={`/cases/${item.id}`} key={item.id} onClick={closeUtilityMenus}><i className={item.priority} /><span><strong>{item.priority === 'critical' ? 'Critical' : 'High-risk'} case requires review</strong><small>{item.ref} · {item.province}</small></span><em>Now</em></Link>)}
+                </div>
+                {!notificationCount && <p className="utility-empty">No active notifications.</p>}
               </div>
             </details>
 

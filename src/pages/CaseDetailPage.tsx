@@ -24,7 +24,7 @@ function DetailRow({ label, value }: { label: string; value?: ReactNode }) {
 export default function CaseDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { cases, advance, assign, addNote, setDecision } = useCases()
+  const { cases, submitForApproval, approveRequest, returnRequest, assign, addNote, setDecision } = useCases()
   const { activeOfficer } = useAuth()
   const [noteText, setNoteText] = useState('')
   const [noteFiles, setNoteFiles] = useState<EvidenceFileMeta[]>([])
@@ -39,7 +39,12 @@ export default function CaseDetailPage() {
   const next = nextStage(c.stage)
   const needsDecision = c.stage === 'in_court' && !c.decision
   const canAssign = activeOfficer.role === 'Administrator' || activeOfficer.role === 'Supervisor'
-  const canApprove = canAssign || activeOfficer.role === 'Investigator'
+  const isCaseOwner = c.assignedTo === activeOfficer.name
+  const canSubmitForApproval = !!next && isCaseOwner && !c.pendingApproval && ['Administrator', 'Supervisor', 'Investigator'].includes(activeOfficer.role)
+  const canReviewApproval = !!c.pendingApproval && (c.pendingApproval.assignedTo === activeOfficer.name || activeOfficer.role === 'Administrator')
+  const canAddNote = canAssign || (activeOfficer.role === 'Investigator' && isCaseOwner)
+  const approvalHistory = c.approvalHistory ?? []
+  const latestApproval = approvalHistory[approvalHistory.length - 1]
 
   return (
     <article className="case-detail-page">
@@ -58,12 +63,17 @@ export default function CaseDetailPage() {
 
         <div className="case-detail-actions">
           {canAssign && <OfficerSelect value={c.assignedTo} options={OFFICERS} onChange={(officer) => assign(c.id, officer)} />}
-          {next && canApprove && <textarea className="case-approval-comment" rows={2} value={approvalComment} onChange={(event) => setApprovalComment(event.target.value)} placeholder={`Add ${stageOf(next).short.toLowerCase()} approval comment...`} aria-label="Approval comment" />}
-          {next && canApprove && <button type="button" className="case-primary-action" disabled={needsDecision || !approvalComment.trim()} aria-describedby={needsDecision ? 'advance-prerequisite' : undefined} onClick={() => { addNote(c.id, `Approved for ${stageOf(next).label}: ${approvalComment.trim()}`); advance(c.id, approvalComment.trim()); setApprovalComment('') }}>
-            <span>Approve & advance to {stageOf(next).short}</span><Chevron width={20} height={20} aria-hidden="true" />
+          {c.pendingApproval && <div className="case-approval-task"><span>Pending approval</span><strong>{stageOf(c.pendingApproval.targetStage).label}</strong><small>Requested by {c.pendingApproval.requestedBy}<br />Assigned to {c.pendingApproval.assignedTo}</small><p>{c.pendingApproval.submissionComment}</p></div>}
+          {!c.pendingApproval && latestApproval?.status === 'returned' && latestApproval.requestedBy === activeOfficer.name && <div className="case-approval-returned"><strong>Changes requested</strong><span>{latestApproval.reviewComment}</span><small>{latestApproval.reviewedBy} · {fmtDateTime(latestApproval.reviewedAt)}</small></div>}
+          {canSubmitForApproval && <textarea className="case-approval-comment" rows={2} value={approvalComment} onChange={(event) => setApprovalComment(event.target.value)} placeholder={`Describe what is ready for ${stageOf(next!).short.toLowerCase()} approval...`} aria-label="Approval submission comment" />}
+          {canSubmitForApproval && <button type="button" className="case-primary-action" disabled={needsDecision || !approvalComment.trim()} aria-describedby={needsDecision ? 'advance-prerequisite' : undefined} onClick={() => { submitForApproval(c.id, approvalComment.trim()); setApprovalComment('') }}>
+            <span>Submit {stageOf(next!).short} for approval</span><Chevron width={20} height={20} aria-hidden="true" />
           </button>}
+          {canReviewApproval && <textarea className="case-approval-comment" rows={2} value={approvalComment} onChange={(event) => setApprovalComment(event.target.value)} placeholder="Add an approval or return comment..." aria-label="Approval review comment" />}
+          {canReviewApproval && <div className="case-approval-review-actions"><button type="button" className="case-return-action" disabled={!approvalComment.trim()} onClick={() => { returnRequest(c.id, approvalComment.trim()); setApprovalComment('') }}>Return for changes</button><button type="button" className="case-primary-action" disabled={!approvalComment.trim()} onClick={() => { approveRequest(c.id, approvalComment.trim()); setApprovalComment('') }}><span>Approve & advance</span><Chevron width={20} height={20} aria-hidden="true" /></button></div>}
           {needsDecision && <p id="advance-prerequisite" className="case-action-requirement">Record the court decision before resolving this case.</p>}
-          {next && !canApprove && <p className="case-action-requirement">Your {activeOfficer.role.toLowerCase()} account has view-only access to case progression.</p>}
+          {next && !isCaseOwner && !canReviewApproval && <p className="case-action-requirement">This case remains owned by {c.assignedTo ?? 'an unassigned intake queue'}. Only the owner can submit the next stage.</p>}
+          {next && isCaseOwner && !canSubmitForApproval && !c.pendingApproval && !['Administrator', 'Supervisor', 'Investigator'].includes(activeOfficer.role) && <p className="case-action-requirement">Your {activeOfficer.role.toLowerCase()} account has view-only access to case progression.</p>}
         </div>
       </header>
 
@@ -125,9 +135,13 @@ export default function CaseDetailPage() {
             </ol>
           </SecondaryPanel>
 
+          {!!c.approvalHistory?.length && <SecondaryPanel title="Approval history" className="case-secondary-wide">
+            <ol className="case-approval-history">{[...c.approvalHistory].reverse().map((approval, index) => <li key={`${approval.reviewedAt}-${index}`} className={approval.status}><i>{approval.status === 'approved' ? <Check width={13} height={13} /> : '!'}</i><div><strong>{approval.status === 'approved' ? 'Approved' : 'Returned'} for {stageOf(approval.targetStage).label}</strong><span>{approval.reviewComment}</span><small>{approval.reviewedBy} · {fmtDateTime(approval.reviewedAt)} · requested by {approval.requestedBy}</small></div></li>)}</ol>
+          </SecondaryPanel>}
+
           <SecondaryPanel title="Case notes" className="case-secondary-wide">
             {c.notes.length ? <ul className="case-notes-list">{c.notes.map((note, index) => <li key={`${note.date}-${index}`}><time dateTime={note.date}>{fmtDateTime(note.date)} · {note.officer}</time><p>{note.text}</p>{!!note.attachments?.length && <ul className="case-note-attachments">{note.attachments.map((file) => <li key={`${file.name}-${file.size}`}><Doc width={14} height={14} aria-hidden="true" /><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small></li>)}</ul>}</li>)}</ul> : <p className="case-panel-note">No notes yet.</p>}
-            {canApprove && <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim() && !noteFiles.length) return; addNote(c.id, noteText.trim() || 'Attachment added.', noteFiles); setNoteText(''); setNoteFiles([]); setNoteStatus(`Note added${noteFiles.length ? ` with ${noteFiles.length} attachment${noteFiles.length === 1 ? '' : 's'}` : ''}`) }}>
+            {canAddNote && <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim() && !noteFiles.length) return; addNote(c.id, noteText.trim() || 'Attachment added.', noteFiles); setNoteText(''); setNoteFiles([]); setNoteStatus(`Note added${noteFiles.length ? ` with ${noteFiles.length} attachment${noteFiles.length === 1 ? '' : 's'}` : ''}`) }}>
               <label htmlFor="case-note">Add an investigation note</label>
               <div className="case-note-compose"><input id="case-note" className="case-control" placeholder="Write a concise case update…" value={noteText} onChange={(event) => { setNoteText(event.target.value); setNoteStatus('') }} /><label className="case-note-attach"><Doc width={16} height={16} aria-hidden="true" /><span>Attach</span><input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" aria-label="Attach files to investigation note" onChange={(event) => { const selected = Array.from(event.target.files ?? []).map(({ name, size, type }) => ({ name, size, type })); setNoteFiles((current) => [...current, ...selected.filter((file) => !current.some((saved) => saved.name === file.name && saved.size === file.size))].slice(0, 8)); setNoteStatus(''); event.currentTarget.value = '' }} /></label><button type="submit" className="case-control" disabled={!noteText.trim() && !noteFiles.length}>Add note</button></div>
               {!!noteFiles.length && <ul className="case-note-pending-files">{noteFiles.map((file) => <li key={`${file.name}-${file.size}`}><Doc width={14} height={14} aria-hidden="true" /><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setNoteFiles((current) => current.filter((item) => !(item.name === file.name && item.size === file.size)))}>×</button></li>)}</ul>}
