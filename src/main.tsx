@@ -4,13 +4,19 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { CaseProvider } from './lib/store.tsx'
+import { AuthProvider } from './lib/authStore.tsx'
+import { applyFont, getSavedFont } from './lib/fonts.ts'
+
+applyFont(getSavedFont())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <CaseProvider>
-        <App />
-      </CaseProvider>
+      <AuthProvider>
+        <CaseProvider>
+          <App />
+        </CaseProvider>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

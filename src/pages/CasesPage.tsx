@@ -5,7 +5,7 @@ import { STAGES } from '../lib/pipeline'
 import type { CaseStage, Priority } from '../lib/types'
 import { fmtDate } from '../lib/format'
 import { PriorityBadge, StageBadge } from '../components/badges'
-import { Search } from '../components/icons'
+import { Chevron, Refresh, Search } from '../components/icons'
 
 const PRIORITIES: Priority[] = ['critical', 'high', 'medium', 'low']
 
@@ -15,6 +15,13 @@ export default function CasesPage() {
   const [q, setQ] = useState('')
   const [stage, setStage] = useState<CaseStage | 'all'>('all')
   const [priority, setPriority] = useState<Priority | 'all'>('all')
+  const hasFilters = q.trim() !== '' || stage !== 'all' || priority !== 'all'
+
+  const resetFilters = () => {
+    setQ('')
+    setStage('all')
+    setPriority('all')
+  }
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -30,7 +37,7 @@ export default function CasesPage() {
   }, [cases, q, stage, priority])
 
   return (
-    <div className="space-y-5">
+    <div className="cases-page space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="display text-2xl font-bold tracking-wide text-ink-100">Cases</h1>
@@ -51,22 +58,32 @@ export default function CasesPage() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <select className="input w-44" value={stage} onChange={(e) => setStage(e.target.value as CaseStage | 'all')} aria-label="Filter by stage">
-          <option value="all">All stages</option>
-          {STAGES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <select className="input w-40" value={priority} onChange={(e) => setPriority(e.target.value as Priority | 'all')} aria-label="Filter by priority">
-          <option value="all">All priorities</option>
-          {PRIORITIES.map((p) => (
-            <option key={p} value={p}>
-              {p[0].toUpperCase() + p.slice(1)}
-            </option>
-          ))}
-        </select>
+        <div className="case-filter-select">
+          <select className="input" value={stage} onChange={(e) => setStage(e.target.value as CaseStage | 'all')} aria-label="Filter by stage">
+            <option value="all">All stages</option>
+            {STAGES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <Chevron className="select-chevron" width={15} height={15} aria-hidden="true" />
+        </div>
+        <div className="case-filter-select case-filter-select--priority">
+          <select className="input" value={priority} onChange={(e) => setPriority(e.target.value as Priority | 'all')} aria-label="Filter by priority">
+            <option value="all">All priorities</option>
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>
+                {p[0].toUpperCase() + p.slice(1)}
+              </option>
+            ))}
+          </select>
+          <Chevron className="select-chevron" width={15} height={15} aria-hidden="true" />
+        </div>
+        <button className="case-filter-reset" type="button" onClick={resetFilters} disabled={!hasFilters}>
+          <Refresh width={15} height={15} />
+          Reset filters
+        </button>
       </div>
 
       {/* Table */}

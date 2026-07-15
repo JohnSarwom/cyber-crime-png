@@ -9,7 +9,7 @@ import { Alert, ArrowDown, ArrowUp, Minus } from './icons'
 export function StageBadge({ stage }: { stage: CaseStage }) {
   const s = stageOf(stage)
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-navy-900/60 px-2.5 py-1 text-[11px] font-medium text-ink-200">
+    <span className="stage-badge inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-navy-900/60 px-2.5 py-1 text-[11px] font-medium text-ink-200">
       <span className="h-2 w-2 rounded-full" style={{ background: s.color }} aria-hidden />
       {s.label}
     </span>
@@ -30,7 +30,7 @@ const PRIORITY: Record<
 export function PriorityBadge({ priority }: { priority: Priority }) {
   const p = PRIORITY[priority]
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-navy-900/60 px-2.5 py-1 text-[11px] font-medium text-ink-200">
+    <span className={`priority-badge priority-badge--${priority} inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-navy-900/60 px-2.5 py-1 text-[11px] font-medium text-ink-200`}>
       <p.Icon width={12} height={12} style={{ color: p.color }} aria-hidden />
       {p.label}
     </span>

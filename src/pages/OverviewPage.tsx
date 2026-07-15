@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { useCases } from '../lib/store'
+import { CURRENT_OFFICER, useCases } from '../lib/store'
 import {
-  Alert, Bell, Calendar, Check, Clock, Doc, Download, Gavel, MapPin, Plus, Search,
+  Alert, Bell, Calendar, Check, Chevron, Clock, Doc, Gavel, MapPin, Plus, Search,
   ShieldLock, User,
 } from '../components/icons'
 
@@ -60,24 +60,13 @@ function TrendChart({ ratio }: { ratio: number }) {
   )
 }
 
-function Donut({ colors, values, center, sub }: { colors: string[]; values: number[]; center: string; sub: string }) {
-  let cursor = 0
-  const stops = values.map((value, i) => {
-    const start = cursor
-    cursor += value
-    return `${colors[i]} ${start}% ${cursor}%`
-  }).join(',')
-  return <div className="donut" style={{ background: `conic-gradient(${stops})` }}><span><strong>{center}</strong><small>{sub}</small></span></div>
-}
-
-function MiniPanel({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="dashboard-panel mini-panel"><h3>{title}</h3>{children}</section>
-}
-
 export default function OverviewPage() {
   const { cases } = useCases()
   const [range, setRange] = useState<(typeof ranges)[number]['id']>('90')
   const selected = ranges.find(r => r.id === range)!
+  const activeCaseCount = useMemo(() => cases.filter(caseRecord => caseRecord.stage !== 'resolved').length, [cases])
+  const priorityCaseCount = useMemo(() => cases.filter(caseRecord => caseRecord.stage !== 'resolved' && (caseRecord.priority === 'critical' || caseRecord.priority === 'high')).length, [cases])
+  const welcomeName = CURRENT_OFFICER.replace('Insp.', 'Inspector')
   const totals = useMemo(() => ({
     new: Math.round(52 * selected.ratio), active: Math.round(23 * selected.ratio), charged: Math.round(19 * selected.ratio), resolved: Math.round(6 * selected.ratio),
   }), [selected])
@@ -92,12 +81,28 @@ export default function OverviewPage() {
   return (
     <div className="overview-page">
       <header className="overview-header">
-        <div><h1>Overview</h1><p>Cyber harassment complaints — Section 23, Cybercrime Act 2016</p></div>
-        <button className="export-button"><Download width={17} height={17} /> Export Report</button>
+        <div className="overview-hero-copy">
+          <span className="overview-hero-eyebrow"><ShieldLock width={16} height={16} aria-hidden="true" /> RPNGC Cyber Operations Command</span>
+          <h1>Welcome back, <span>{welcomeName}</span></h1>
+          <p>Your command overview for cyber harassment complaints under Section 23 of the Cybercrime Act 2016.</p>
+          <div className="overview-hero-status" aria-label="Current operational status">
+            <span className="is-online"><i aria-hidden="true" /> Command centre online</span>
+            <span><Clock width={15} height={15} aria-hidden="true" /><strong>{activeCaseCount}</strong> active cases</span>
+            <span className="is-priority"><Alert width={15} height={15} aria-hidden="true" /><strong>{priorityCaseCount}</strong> priority matters</span>
+          </div>
+          <div className="overview-hero-actions">
+            <Link to="/cases" className="overview-hero-primary">Open case workspace <Chevron width={17} height={17} aria-hidden="true" /></Link>
+            <Link to="/alerts" className="overview-hero-secondary">Review priority alerts</Link>
+          </div>
+        </div>
+        <div className="overview-hero-visual" aria-hidden="true">
+          <i className="overview-hero-orbit orbit-one" /><i className="overview-hero-orbit orbit-two" />
+          <span className="overview-hero-shield"><ShieldLock width={78} height={78} /></span>
+          <div><small>Royal Papua New Guinea Constabulary</small><strong>CYBER UNIT</strong><em>Secure · Monitor · Respond</em></div>
+        </div>
         <div className="date-tabs" role="group" aria-label="Date range">
           {ranges.map(r => <button key={r.id} className={range === r.id ? 'active' : ''} onClick={() => setRange(r.id)}>{r.label}</button>)}
         </div>
-        <ShieldLock className="header-shield" width={31} height={31} />
       </header>
 
       <div className="metric-grid">
@@ -112,29 +117,27 @@ export default function OverviewPage() {
           <div className="panel-head"><div><h3>COMPLAINTS FILED</h3><p>{totals.new} complaints in range</p></div><button>Daily Trend <Calendar width={16} height={16} /></button></div>
           <TrendChart ratio={selected.ratio} />
         </section>
-        <section className="dashboard-panel status-panel">
-          <h3>COMPLAINTS BY STATUS</h3>
-          <div className="status-content">
-            <Donut colors={['#0966d9','#6b2dc5','#24a936','#f18400']} values={[52,23,19,6]} center="100" sub="Total" />
-            <ul>{[['New','52% (52)','#0966d9'],['Active Investigation','23% (23)','#6b2dc5'],['Charges Filed','19% (19)','#24a936'],['Resolved','6% (6)','#f18400']].map(([label,value,color]) => <li key={label}><i style={{background:color}} /><span>{label}</span><b>{value}</b></li>)}</ul>
+        <section className="dashboard-panel overview-actions-panel">
+          <div className="overview-actions-head"><div><span>Workspace shortcuts</span><h3>QUICK ACTIONS</h3></div><small>Operational tools</small></div>
+          <Link to="/alerts" className="overview-risk-action"><Alert width={23} height={23} /><span><strong>High risk alerts</strong><small>{risks[0][1] + risks[1][1]} matters require priority review</small></span><b>Review →</b></Link>
+          <div className="overview-action-grid">
+            <Link to="/cases" className="overview-action"><span><Plus width={22} height={22} /></span><div><strong>New complaint</strong><small>Create a report</small></div></Link>
+            <Link to="/cases" className="overview-action"><span><Search width={21} height={21} /></span><div><strong>Search cases</strong><small>Find case details</small></div></Link>
+            <Link to="/reports" className="overview-action"><span className="purple"><Doc width={20} height={20} /></span><div><strong>Generate report</strong><small>Open reporting</small></div></Link>
+            <Link to="/alerts" className="overview-action"><span className="orange"><Bell width={20} height={20} /></span><div><strong>System alerts</strong><small>View notifications</small></div></Link>
           </div>
-          <Link to="/cases">View detailed breakdown →</Link>
         </section>
       </div>
 
-      <div className="detail-grid">
-        <MiniPanel title="COMPLAINTS BY CATEGORY"><ul className="bar-list">{categories.map(([label, value, color]) => <li key={label}><span className="list-icon" style={{color,background:`${color}26`}}><User width={13} height={13} /></span><em>{label}</em><i><b style={{width:`${value * 2}%`,background:color}} /></i><strong>{value} ({Math.round(value / 50 * 100)}%)</strong></li>)}</ul></MiniPanel>
-        <MiniPanel title="RISK LEVEL DISTRIBUTION"><div className="risk-body"><Donut colors={risks.map(r=>r[2])} values={[16,36,32,16]} center="!" sub="" /><ul>{risks.map(([label,value,color]) => <li key={label}><i style={{background:color}} />{label}<strong>{value} ({value*2}%)</strong></li>)}</ul></div></MiniPanel>
-        <MiniPanel title="TOP PROVINCES"><ul className="rank-list">{provinces.map(([label,value]) => <li key={label}><MapPin width={18} height={18} /><span>{label}</span><strong>{value}</strong></li>)}</ul></MiniPanel>
-        <MiniPanel title="CASE AGEING"><ul className="rank-list age-list">{ages.map(([label,value]) => <li key={label}><Clock width={18} height={18} /><span>{label}</span><strong>{value}</strong></li>)}</ul></MiniPanel>
-      </div>
-
-      <div className="action-row">
-        <div className="risk-alert"><Alert width={33} height={33} /><span><strong>HIGH RISK ALERTS</strong><small>8 complaints flagged as<br />High or Critical risk</small></span><button>View Alerts ›</button></div>
-        <Link to="/cases" className="quick-action"><span><Plus width={28} height={28} /></span><div><strong>New Complaint</strong><small>Create a new report</small></div></Link>
-        <Link to="/cases" className="quick-action"><span><Search width={27} height={27} /></span><div><strong>Search Cases</strong><small>Find and view case details</small></div></Link>
-        <button className="quick-action"><span className="purple"><Doc width={25} height={25} /></span><div><strong>Generate Report</strong><small>Create analytical report</small></div></button>
-        <button className="quick-action"><span className="orange"><Bell width={25} height={25} /></span><div><strong>System Alerts</strong><small>View recent alerts</small></div></button>
+      <div className="overview-table-grid">
+        <section className="dashboard-panel overview-summary-table">
+          <div className="overview-table-head"><div><span>Complaint profile</span><h3>CATEGORY &amp; RISK</h3></div><Link to="/analytics">Full analytics →</Link></div>
+          <div className="overview-table-wrap"><table><thead><tr><th>Category</th><th>Cases</th><th>Share</th><th>Risk level</th><th>Cases</th><th>Share</th></tr></thead><tbody>{categories.map(([category, count, categoryColor], index) => { const [risk, riskCount, riskColor] = risks[index]; return <tr key={category}><td><span className="table-label-icon" style={{ color: categoryColor, background: `${categoryColor}24` }}><User width={13} height={13} /></span><b>{category}</b></td><td>{count}</td><td><span className="table-progress"><i style={{ width: `${count / 32 * 100}%`, background: categoryColor }} /></span><strong>{Math.round(count / 50 * 100)}%</strong></td><td><i className="risk-dot" style={{ background: riskColor }} /><b>{risk}</b></td><td>{riskCount}</td><td><span className="table-progress"><i style={{ width: `${riskCount / 18 * 100}%`, background: riskColor }} /></span><strong>{riskCount * 2}%</strong></td></tr> })}</tbody></table></div>
+        </section>
+        <section className="dashboard-panel overview-summary-table">
+          <div className="overview-table-head"><div><span>Operational distribution</span><h3>PROVINCE &amp; CASE AGEING</h3></div><Link to="/cases">View cases →</Link></div>
+          <div className="overview-table-wrap"><table><thead><tr><th>Province</th><th>Cases</th><th>Share</th><th>Age bracket</th><th>Cases</th><th>Share</th></tr></thead><tbody>{provinces.map(([province, provinceValue], index) => { const [age, ageValue] = ages[index]; const [provinceCount, provinceShare] = provinceValue.split(' '); const [ageCount, ageShare] = ageValue.split(' '); return <tr key={province}><td><MapPin width={16} height={16} /><b>{province}</b></td><td>{provinceCount}</td><td><strong>{provinceShare}</strong></td><td><Clock width={16} height={16} /><b>{age}</b></td><td>{ageCount}</td><td><strong>{ageShare}</strong></td></tr> })}</tbody></table></div>
+        </section>
       </div>
       <span className="case-count-sr">{cases.length} demonstration cases loaded</span>
     </div>

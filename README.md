@@ -1,5 +1,8 @@
 # RPNGC Cyber Unit — Case Management Dashboard
 
+> See [docs/IMPLEMENTATION_RECORD.md](docs/IMPLEMENTATION_RECORD.md) for the detailed
+> design, functionality, architecture, validation, limitations, and handover record.
+
 Internal (officer-facing) dashboard for managing cyber harassment complaints under
 **Section 23 of the Cybercrime Act 2016** (Papua New Guinea). Companion to the public
 reporting portal in `../cyber-security-reporting`.

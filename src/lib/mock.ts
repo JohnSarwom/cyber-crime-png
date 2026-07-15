@@ -104,6 +104,13 @@ function stageFor(ageDays: number): CaseStage {
 
 const DAY = 86_400_000
 
+function hearingAt(now: Date, daysAhead: number) {
+  const hearing = new Date(now)
+  hearing.setDate(hearing.getDate() + daysAhead)
+  hearing.setHours(9, 30, 0, 0)
+  return hearing.toISOString()
+}
+
 export function generateCases(now = new Date()): CaseRecord[] {
   const cases: CaseRecord[] = []
   const N = 52
@@ -159,6 +166,18 @@ export function generateCases(now = new Date()): CaseRecord[] {
       attachedFileCount: Math.floor(rnd() * 6),
       assignedTo: stageIdx >= 1 || rnd() < 0.4 ? pick(OFFICERS) : undefined,
       decision,
+      court:
+        stageIdx >= STAGE_INDEX.in_court
+          ? {
+              court: 'National Court',
+              nextHearingAt:
+                stage === 'in_court'
+                  ? hearingAt(now, 7 + Math.floor(rnd() * 14))
+                  : undefined,
+              presidingOfficer: rnd() < 0.55 ? 'TBA' : `Justice ${pick(LAST)}`,
+              hearingType: pick(['Mention', 'Directions hearing', 'Trial']),
+            }
+          : undefined,
       remedies: {
         contentRemoval: stage === 'resolved' && rnd() < 0.7,
         protectionOrder: stage === 'resolved' && rnd() < 0.45,

@@ -115,13 +115,38 @@ export const Minus = (p: IconProps) => (
   </svg>
 )
 
+export const Lock = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="4.5" y="10" width="15" height="10" rx="2" />
+    <path d="M8 10V7a4 4 0 018 0v3" />
+    <circle cx="12" cy="15" r="1.3" />
+  </svg>
+)
+export const Eye = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+)
+export const EyeOff = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 3l18 18" />
+    <path d="M10.6 10.6a3 3 0 004.2 4.2" />
+    <path d="M9.9 5.2A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a17.3 17.3 0 01-3.2 3.9M6.1 6.1A17.3 17.3 0 002 12s3.5 7 10 7a9.6 9.6 0 002.3-.3" />
+  </svg>
+)
 export const Reports = (p: IconProps) => <svg {...base(p)}><path d="M5 20V11M12 20V4M19 20v-7" /></svg>
 export const Analytics = (p: IconProps) => <svg {...base(p)}><path d="M12 3v9l7.8 3.5A8.5 8.5 0 1 1 12 3z" /><path d="M15 3.7A8.5 8.5 0 0 1 20.3 9H15z" /></svg>
 export const Bell = (p: IconProps) => <svg {...base(p)}><path d="M5 17h14l-2-3v-4a5 5 0 0 0-10 0v4l-2 3zM10 20h4" /></svg>
 export const Users = (p: IconProps) => <svg {...base(p)}><circle cx="9" cy="8" r="3" /><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5" /></svg>
 export const Settings = (p: IconProps) => <svg {...base(p)}><circle cx="12" cy="12" r="3" /><path d="M19 13.5l2 1.2-2 3.5-2.1-1a8 8 0 0 1-2.6 1.5L14 21h-4l-.3-2.3a8 8 0 0 1-2.6-1.5l-2.1 1-2-3.5 2-1.2a8 8 0 0 1 0-3L3 9.3 5 5.8l2.1 1a8 8 0 0 1 2.6-1.5L10 3h4l.3 2.3a8 8 0 0 1 2.6 1.5l2.1-1 2 3.5-2 1.2a8 8 0 0 1 0 3z" /></svg>
 export const Refresh = (p: IconProps) => <svg {...base(p)}><path d="M20 7v5h-5M4 17v-5h5" /><path d="M6.1 8A7 7 0 0 1 18 6l2 2M17.9 16A7 7 0 0 1 6 18l-2-2" /></svg>
+export const Logout = (p: IconProps) => <svg {...base(p)}><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10" /></svg>
 export const Download = (p: IconProps) => <svg {...base(p)}><path d="M12 3v12M8 11l4 4 4-4M5 19h14" /></svg>
 export const Calendar = (p: IconProps) => <svg {...base(p)}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></svg>
 export const MapPin = (p: IconProps) => <svg {...base(p)}><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z" /><circle cx="12" cy="10" r="2.5" /></svg>
 export const Plus = (p: IconProps) => <svg {...base(p)}><path d="M12 5v14M5 12h14" /></svg>
+export const Court = (p: IconProps) => <svg {...base(p)}><path d="M3 10h18M5 10v8M9 10v8M15 10v8M19 10v8M3 19h18M2 22h20M12 3l9 5H3l9-5z" /></svg>
+export const Flag = (p: IconProps) => <svg {...base(p)}><path d="M5 21V4M5 5c4-3 7 3 12 0v9c-5 3-8-3-12 0" /></svg>
+export const People = (p: IconProps) => <svg {...base(p)}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3 20a6 6 0 0112 0M14 15a5 5 0 017 5" /></svg>
+export const Monitor = (p: IconProps) => <svg {...base(p)}><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4M9 10l2 2 4-4" /></svg>

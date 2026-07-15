@@ -13,11 +13,13 @@ export const STAGES: {
   short: string
   color: string
   description: string
+  milestone: string
 }[] = [
   {
     id: 'filed',
     label: 'Complaint Filed',
     short: 'Filed',
+    milestone: 'Case registered',
     color: 'var(--color-stage-1)',
     description: 'Complaint received with evidence and written statement (RPNGC / NICTA).',
   },
@@ -25,6 +27,7 @@ export const STAGES: {
     id: 'evidence_review',
     label: 'Evidence Review',
     short: 'Evidence',
+    milestone: 'Evidence submitted',
     color: 'var(--color-stage-2)',
     description: 'Screenshots, chat logs, emails, timestamps and metadata verified and preserved.',
   },
@@ -32,6 +35,7 @@ export const STAGES: {
     id: 'investigation',
     label: 'Under Investigation',
     short: 'Investigation',
+    milestone: 'Investigation complete',
     color: 'var(--color-stage-3)',
     description: 'IP addresses traced, accounts verified, suspects identified. Digital forensics as needed.',
   },
@@ -39,6 +43,7 @@ export const STAGES: {
     id: 'charges_filed',
     label: 'Charges Filed',
     short: 'Charged',
+    milestone: 'Charges approved',
     color: 'var(--color-stage-4)',
     description: 'Sufficient evidence — charges laid under Section 23 of the Act.',
   },
@@ -46,6 +51,7 @@ export const STAGES: {
     id: 'in_court',
     label: 'Court Proceedings',
     short: 'In Court',
+    milestone: 'Hearing underway',
     color: 'var(--color-stage-5)',
     description: 'Proceedings before the National Court.',
   },
@@ -53,6 +59,7 @@ export const STAGES: {
     id: 'resolved',
     label: 'Resolved',
     short: 'Resolved',
+    milestone: 'Outcome recorded',
     color: 'var(--color-stage-6)',
     description: 'Decision delivered; penalties and victim remedies applied.',
   },

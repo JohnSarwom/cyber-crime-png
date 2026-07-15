@@ -1,63 +1,23 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../lib/store'
-import { DECISIONS, EVIDENCE_TYPES, SECTION_23, STAGES, STAGE_INDEX, nextStage, stageOf } from '../lib/pipeline'
+import { DECISIONS, EVIDENCE_TYPES, OFFICERS, nextStage, stageOf } from '../lib/pipeline'
 import type { DecisionOutcome } from '../lib/types'
 import { fmtDate, fmtDateTime } from '../lib/format'
 import { PriorityBadge, StageBadge } from '../components/badges'
-import { OFFICERS } from '../lib/pipeline'
 import { Check, Chevron, Gavel, Scales } from '../components/icons'
+import { CaseWorkflow } from '../components/case/CaseWorkflow'
+import { CourtProgress } from '../components/case/CourtProgress'
+import { EvidenceSummary } from '../components/case/EvidenceSummary'
+import { IncidentDetails } from '../components/case/IncidentDetails'
+import { OfficerSelect } from '../components/case/OfficerSelect'
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="panel p-5">
-      <h3 className="display mb-3 text-sm font-bold uppercase tracking-wide text-cyan-glow">{title}</h3>
-      {children}
-    </section>
-  )
+function SecondaryPanel({ title, id, children, className = '' }: { title: string; id?: string; children: ReactNode; className?: string }) {
+  return <section id={id} className={`case-panel case-secondary-panel ${className}`} tabIndex={id ? -1 : undefined}><h2 className="case-panel__title">{title}</h2>{children}</section>
 }
 
-function Row({ label, value }: { label: string; value?: ReactNode }) {
-  return (
-    <div className="flex gap-3 py-1 text-sm">
-      <span className="w-36 flex-shrink-0 font-medium text-ink-400">{label}</span>
-      <span className="min-w-0 text-ink-100">{value ?? '—'}</span>
-    </div>
-  )
-}
-
-/** Horizontal pipeline stepper — completed stages carry the ordinal ramp. */
-function Stepper({ current }: { current: number }) {
-  return (
-    <ol className="flex items-center">
-      {STAGES.map((s, i) => (
-        <li key={s.id} className={`flex items-center ${i < STAGES.length - 1 ? 'flex-1' : ''}`}>
-          <div className="flex flex-col items-center gap-1.5">
-            <span
-              className="flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold"
-              style={
-                i <= current
-                  ? { background: s.color, borderColor: s.color, color: i < 3 ? '#0b1830' : '#fff' }
-                  : { borderColor: 'var(--color-panel-border)', color: 'var(--color-ink-400)' }
-              }
-            >
-              {i < current ? <Check width={13} height={13} /> : i + 1}
-            </span>
-            <span className={`whitespace-nowrap text-[10px] font-medium ${i <= current ? 'text-ink-200' : 'text-ink-400'}`}>
-              {s.short}
-            </span>
-          </div>
-          {i < STAGES.length - 1 && (
-            <span
-              className="mx-2 mb-5 h-px flex-1"
-              style={{ background: i < current ? 'var(--color-stage-4)' : 'var(--color-panel-border)' }}
-              aria-hidden
-            />
-          )}
-        </li>
-      ))}
-    </ol>
-  )
+function DetailRow({ label, value }: { label: string; value?: ReactNode }) {
+  return <div className="case-detail-row"><span>{label}</span><strong>{value ?? '—'}</strong></div>
 }
 
 export default function CaseDetailPage() {
@@ -65,259 +25,102 @@ export default function CaseDetailPage() {
   const navigate = useNavigate()
   const { cases, advance, assign, addNote, setDecision } = useCases()
   const [noteText, setNoteText] = useState('')
+  const [noteStatus, setNoteStatus] = useState('')
 
-  const c = cases.find((x) => x.id === id)
+  const c = cases.find((item) => item.id === id)
   if (!c) {
-    return (
-      <div className="panel mx-auto max-w-md p-8 text-center">
-        <p className="text-sm text-ink-300">Case not found.</p>
-        <Link to="/cases" className="btn btn-primary mt-4 px-4 py-2 text-sm">
-          Back to cases
-        </Link>
-      </div>
-    )
+    return <div className="case-detail-page"><div className="case-panel case-not-found"><p>Case not found.</p><Link to="/cases" className="case-primary-action">Back to cases</Link></div></div>
   }
 
-  const stageIdx = STAGE_INDEX[c.stage]
   const next = nextStage(c.stage)
   const needsDecision = c.stage === 'in_court' && !c.decision
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-1 text-xs font-medium text-ink-400 hover:text-ink-200">
-            <Chevron width={12} height={12} className="rotate-180" /> Back
+    <article className="case-detail-page">
+      <header className="case-detail-header">
+        <div className="case-detail-identity">
+          <button type="button" onClick={() => navigate(-1)} className="case-back-button">
+            <Chevron width={20} height={20} aria-hidden="true" /> Back
           </button>
-          <h1 className="display tabular text-2xl font-bold tracking-wide text-ink-100">{c.ref}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <h1>{c.ref}</h1>
+          <div className="case-header-meta">
             <StageBadge stage={c.stage} />
             <PriorityBadge priority={c.priority} />
-            <span className="text-xs text-ink-400">Filed {fmtDate(c.filedAt)}</span>
+            <span>Filed {fmtDate(c.filedAt)}</span>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="input w-44"
-            value={c.assignedTo ?? ''}
-            onChange={(e) => assign(c.id, e.target.value)}
-            aria-label="Assign officer"
-          >
-            <option value="" disabled>
-              Assign officer…
-            </option>
-            {OFFICERS.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-          {next && (
-            <button
-              className="btn btn-primary px-4 py-2 text-sm disabled:opacity-40"
-              disabled={needsDecision}
-              title={needsDecision ? 'Record the court decision first' : undefined}
-              onClick={() => advance(c.id)}
-            >
-              Advance to {stageOf(next).short} <Chevron width={14} height={14} />
-            </button>
-          )}
+        <div className="case-detail-actions">
+          <OfficerSelect value={c.assignedTo} options={OFFICERS} onChange={(officer) => assign(c.id, officer)} />
+          {next && <button type="button" className="case-primary-action" disabled={needsDecision} aria-describedby={needsDecision ? 'advance-prerequisite' : undefined} onClick={() => advance(c.id)}>
+            <span>Advance to {stageOf(next).short}</span><Chevron width={20} height={20} aria-hidden="true" />
+          </button>}
+          {needsDecision && <p id="advance-prerequisite" className="case-action-requirement">Record the court decision before resolving this case.</p>}
         </div>
       </header>
 
-      {/* Pipeline */}
-      <div className="panel p-5">
-        <Stepper current={stageIdx} />
-        <p className="mt-3 text-xs text-ink-400">{stageOf(c.stage).description}</p>
+      <div className="case-workspace-grid">
+        <CaseWorkflow caseRecord={c} />
+        <CourtProgress caseRecord={c} decisionRequired={needsDecision} />
+        <IncidentDetails caseRecord={c} />
+        <EvidenceSummary caseRecord={c} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        {/* Left column */}
-        <div className="space-y-4 xl:col-span-2">
-          <Panel title="Incident">
-            <blockquote className="mb-3 rounded-md border-l-2 border-cyan-glow/60 bg-navy-900/50 p-3 text-xs italic text-ink-300">
-              {SECTION_23}
-            </blockquote>
-            <Row label="Nature" value={c.natureSummary} />
-            <Row label="Impact on victim" value={c.impactSummary} />
-            <Row label="Platform" value={c.platform} />
-            <Row label="Province" value={c.province} />
-            <Row label="Offender (alias)" value={c.offenderAlias ?? 'Unknown'} />
-          </Panel>
+      <section className="case-secondary-details" aria-labelledby="additional-case-information">
+        <div className="case-secondary-heading">
+          <div><span>Case record</span><h2 id="additional-case-information">Additional case information</h2></div>
+          <p>Parties, evidence, legal outcomes and officer activity</p>
+        </div>
+        <div className="case-secondary-grid">
+          <SecondaryPanel title="Parties">
+            <DetailRow label="Complainant" value={c.complainant.name} />
+            <DetailRow label="Contact" value={<span className="tabular">{c.complainant.contact}</span>} />
+            <DetailRow label="Email" value={c.complainant.email} />
+            <DetailRow label="Victim" value={c.victimSameAsComplainant ? `${c.complainant.name} (same as complainant)` : c.victimName} />
+          </SecondaryPanel>
 
-          <Panel title="Evidence provided">
-            <ul className="space-y-1.5 text-sm">
-              {EVIDENCE_TYPES.map((e) => {
-                const has = c.evidence.includes(e.id)
-                return (
-                  <li key={e.id} className={`flex items-center gap-2 ${has ? 'text-ink-100' : 'text-ink-400'}`}>
-                    <span
-                      className="flex h-4 w-4 items-center justify-center rounded border"
-                      style={
-                        has
-                          ? { background: 'var(--color-cyber-500)', borderColor: 'var(--color-cyber-500)', color: '#fff' }
-                          : { borderColor: 'var(--color-panel-border)' }
-                      }
-                    >
-                      {has && <Check width={11} height={11} />}
-                    </span>
-                    {e.label}
-                  </li>
-                )
+          <SecondaryPanel id="case-evidence-detail" title="Evidence detail">
+            <ul className="case-check-list">
+              {EVIDENCE_TYPES.map((evidence) => {
+                const available = c.evidence.includes(evidence.id)
+                return <li key={evidence.id} className={available ? 'is-available' : ''}><i aria-hidden="true">{available && <Check width={12} height={12} />}</i>{evidence.label}</li>
               })}
             </ul>
-            <p className="mt-3 text-xs text-ink-400">
-              {c.attachedFileCount} file{c.attachedFileCount === 1 ? '' : 's'} attached to the complaint.
-            </p>
-          </Panel>
+            <p className="case-panel-note">{c.attachedFileCount} file{c.attachedFileCount === 1 ? '' : 's'} attached to the complaint.</p>
+          </SecondaryPanel>
 
-          <Panel title="Timeline">
-            <ol className="relative ml-2 space-y-4 border-l border-panel-border pl-5">
-              {[...c.timeline].reverse().map((ev, i) => {
-                const s = stageOf(ev.stage)
-                return (
-                  <li key={i} className="relative">
-                    <span
-                      className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-navy-950"
-                      style={{ background: s.color }}
-                      aria-hidden
-                    />
-                    <div className="text-sm font-semibold text-ink-100">{s.label}</div>
-                    <div className="text-[11px] text-ink-400">
-                      {fmtDateTime(ev.date)}
-                      {ev.officer ? ` · ${ev.officer}` : ''}
-                    </div>
-                    {ev.note && <p className="mt-1 text-xs text-ink-300">{ev.note}</p>}
-                  </li>
-                )
-              })}
-            </ol>
-          </Panel>
+          <SecondaryPanel id="case-decision" title="Decision & penalty">
+            {c.decision ? <div className="case-decision-result"><Gavel width={22} height={22} aria-hidden="true" /><div><strong>{DECISIONS[c.decision].label}</strong><p>{DECISIONS[c.decision].penalty}</p></div></div>
+              : c.stage === 'in_court' ? <div><label className="case-field-label" htmlFor="case-decision-select">Record the National Court decision</label><select id="case-decision-select" className="case-control case-secondary-select" defaultValue="" onChange={(event) => event.target.value && setDecision(c.id, event.target.value as DecisionOutcome)}><option value="" disabled>Select decision…</option>{(Object.keys(DECISIONS) as DecisionOutcome[]).map((decision) => <option key={decision} value={decision}>{DECISIONS[decision].label} — {DECISIONS[decision].penalty}</option>)}</select></div>
+              : <ul className="case-penalty-list">{(Object.keys(DECISIONS) as DecisionOutcome[]).map((decision) => <li key={decision}><Scales width={15} height={15} aria-hidden="true" /><span><strong>{DECISIONS[decision].label}</strong> — {DECISIONS[decision].penalty}</span></li>)}</ul>}
+          </SecondaryPanel>
 
-          <Panel title="Case notes">
-            {c.notes.length > 0 ? (
-              <ul className="mb-3 space-y-3">
-                {c.notes.map((n, i) => (
-                  <li key={i} className="rounded-lg border border-panel-border bg-navy-900/40 p-3">
-                    <div className="text-[11px] text-ink-400">
-                      {fmtDateTime(n.date)} · {n.officer}
-                    </div>
-                    <p className="mt-1 text-sm text-ink-200">{n.text}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mb-3 text-xs text-ink-400">No notes yet.</p>
-            )}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (noteText.trim()) {
-                  addNote(c.id, noteText.trim())
-                  setNoteText('')
-                }
-              }}
-              className="flex gap-2"
-            >
-              <input
-                className="input"
-                placeholder="Add an investigation note…"
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-              />
-              <button type="submit" className="btn btn-outline px-4 py-2 text-sm">
-                Add
-              </button>
-            </form>
-          </Panel>
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-4">
-          <Panel title="Parties">
-            <Row label="Complainant" value={c.complainant.name} />
-            <Row label="Contact" value={<span className="tabular">{c.complainant.contact}</span>} />
-            <Row label="Email" value={c.complainant.email} />
-            <div className="my-2 border-t border-panel-border" />
-            <Row
-              label="Victim"
-              value={c.victimSameAsComplainant ? `${c.complainant.name} (same as complainant)` : c.victimName}
-            />
-          </Panel>
-
-          <Panel title="Decision & penalty">
-            {c.decision ? (
-              <div className="rounded-lg border border-cyan-glow/25 bg-cyber-500/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-ink-100">
-                  <Gavel width={16} height={16} className="text-cyan-soft" />
-                  {DECISIONS[c.decision].label}
-                </div>
-                <p className="mt-1 text-xs text-ink-300">{DECISIONS[c.decision].penalty}</p>
-              </div>
-            ) : c.stage === 'in_court' ? (
-              <div>
-                <p className="mb-2 text-xs text-ink-400">Record the National Court decision to resolve this case:</p>
-                <select
-                  className="input"
-                  defaultValue=""
-                  onChange={(e) => e.target.value && setDecision(c.id, e.target.value as DecisionOutcome)}
-                  aria-label="Record decision"
-                >
-                  <option value="" disabled>
-                    Select decision…
-                  </option>
-                  {(Object.keys(DECISIONS) as DecisionOutcome[]).map((d) => (
-                    <option key={d} value={d}>
-                      {DECISIONS[d].label} — {DECISIONS[d].penalty}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <ul className="space-y-1.5 text-xs text-ink-400">
-                {(Object.keys(DECISIONS) as DecisionOutcome[]).map((d) => (
-                  <li key={d} className="flex items-center gap-2">
-                    <Scales width={13} height={13} className="flex-shrink-0" />
-                    <span>
-                      <span className="text-ink-300">{DECISIONS[d].label}</span> → {DECISIONS[d].penalty}
-                    </span>
-                  </li>
-                ))}
-                <li className="pt-1 text-[11px]">Courts may also impose fines and ICT restrictions.</li>
-              </ul>
-            )}
-          </Panel>
-
-          <Panel title="Victim remedies">
-            <ul className="space-y-1.5 text-sm">
+          <SecondaryPanel title="Victim remedies">
+            <ul className="case-check-list remedies">
               {[
                 { on: c.remedies.contentRemoval, label: 'Order for removal of harmful content' },
                 { on: c.remedies.protectionOrder, label: 'Protection order against further harassment' },
-              ].map((r) => (
-                <li key={r.label} className={`flex items-center gap-2 ${r.on ? 'text-ink-100' : 'text-ink-400'}`}>
-                  <span
-                    className="flex h-4 w-4 items-center justify-center rounded-full border"
-                    style={
-                      r.on
-                        ? { background: 'var(--color-status-good)', borderColor: 'var(--color-status-good)', color: '#fff' }
-                        : { borderColor: 'var(--color-panel-border)' }
-                    }
-                  >
-                    {r.on && <Check width={11} height={11} />}
-                  </span>
-                  {r.label}
-                </li>
-              ))}
+              ].map((remedy) => <li key={remedy.label} className={remedy.on ? 'is-available' : ''}><i aria-hidden="true">{remedy.on && <Check width={12} height={12} />}</i>{remedy.label}</li>)}
             </ul>
-            {c.stage !== 'resolved' && (
-              <p className="mt-2 text-[11px] text-ink-400">Remedies are recorded when the case resolves.</p>
-            )}
-          </Panel>
+            {c.stage !== 'resolved' && <p className="case-panel-note">Remedies are recorded when the case resolves.</p>}
+          </SecondaryPanel>
+
+          <SecondaryPanel title="Timeline" className="case-secondary-wide">
+            <ol className="case-timeline">
+              {[...c.timeline].reverse().map((event, index) => <li key={`${event.stage}-${event.date}-${index}`}><i style={{ background: stageOf(event.stage).color }} aria-hidden="true" /><div><strong>{stageOf(event.stage).label}</strong><time dateTime={event.date}>{fmtDateTime(event.date)}{event.officer ? ` · ${event.officer}` : ''}</time>{event.note && <p>{event.note}</p>}</div></li>)}
+            </ol>
+          </SecondaryPanel>
+
+          <SecondaryPanel title="Case notes" className="case-secondary-wide">
+            {c.notes.length ? <ul className="case-notes-list">{c.notes.map((note, index) => <li key={`${note.date}-${index}`}><time dateTime={note.date}>{fmtDateTime(note.date)} · {note.officer}</time><p>{note.text}</p></li>)}</ul> : <p className="case-panel-note">No notes yet.</p>}
+            <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim()) return; addNote(c.id, noteText.trim()); setNoteText(''); setNoteStatus('Note added') }}>
+              <label htmlFor="case-note">Add an investigation note</label>
+              <div><input id="case-note" className="case-control" placeholder="Write a concise case update…" value={noteText} onChange={(event) => { setNoteText(event.target.value); setNoteStatus('') }} /><button type="submit" className="case-control" disabled={!noteText.trim()}>Add note</button></div>
+              <span className="sr-only" role="status" aria-live="polite">{noteStatus}</span>
+            </form>
+          </SecondaryPanel>
         </div>
-      </div>
-    </div>
+      </section>
+    </article>
   )
 }

@@ -14,6 +14,13 @@ export type DecisionOutcome = 'misdemeanour' | 'serious_harm' | 'death_resulting
 
 export type Platform = 'Facebook' | 'WhatsApp' | 'TikTok' | 'Instagram' | 'Other'
 
+export interface CourtDetails {
+  court?: string
+  nextHearingAt?: string
+  presidingOfficer?: string
+  hearingType?: string
+}
+
 export interface TimelineEvent {
   stage: CaseStage
   date: string // ISO
@@ -50,6 +57,8 @@ export interface CaseRecord {
 
   assignedTo?: string
   decision?: DecisionOutcome
+  /** Optional while existing locally persisted demo records migrate lazily. */
+  court?: CourtDetails
   remedies: { contentRemoval: boolean; protectionOrder: boolean }
 
   timeline: TimelineEvent[]
