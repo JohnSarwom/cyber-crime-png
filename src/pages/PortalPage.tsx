@@ -41,7 +41,12 @@ const SEVERITY: { id: ComplaintInput['severity']; label: string; hint: string }[
   { id: 'low', label: 'Offensive, but not urgent', hint: 'Unwanted contact I want on record' },
 ]
 
-const STEPS = ['The incident', 'Evidence', 'Your details', 'Review & submit']
+const STEPS = [
+  { label: 'The incident', caption: 'Tell us what happened' },
+  { label: 'Evidence', caption: 'Add supporting evidence' },
+  { label: 'Your details', caption: 'Provide your information' },
+  { label: 'Review & submit', caption: 'Confirm and submit' },
+]
 
 const RELIEF_OPTIONS = [
   { id: 'investigation', label: 'Immediate investigation of the offender' },
@@ -285,10 +290,13 @@ export default function PortalPage() {
             <button type="button" className="portal-link-back" onClick={() => setView('home')}>← Back to portal home</button>
 
             <ol className="portal-steps" aria-label="Report steps">
-              {STEPS.map((label, i) => (
-                <li key={label} className={i === step ? 'current' : i < step ? 'done' : ''}>
-                  <span>{i < step ? <Check width={14} height={14} /> : i + 1}</span>
-                  <em>{label}</em>
+              {STEPS.map(({ label, caption }, i) => (
+                <li key={label} className={i === step ? 'current' : i < step ? 'done' : ''} aria-current={i === step ? 'step' : undefined}>
+                  <span>{i < step ? <Check width={20} height={20} /> : i + 1}</span>
+                  <div className="portal-step-copy">
+                    <em>{label}</em>
+                    <small>{caption}</small>
+                  </div>
                 </li>
               ))}
             </ol>
