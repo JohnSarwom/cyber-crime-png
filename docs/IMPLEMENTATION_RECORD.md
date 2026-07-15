@@ -14,6 +14,8 @@ The application is an officer-facing operational dashboard for reviewing, assign
 
 ## 2. Executive summary
 
+> **Reference redesign addendum:** The later Case Detail reconstruction, rich workflow effects, branded officer picker, court/evidence components, responsive accessibility work, and Overview welcome hero are documented in [`REFERENCE_UI_REDESIGN_RECORD.md`](REFERENCE_UI_REDESIGN_RECORD.md). The audit and phase plans remain under `working/`.
+
 The original dashboard was expanded into a complete multi-page internal portal with a consistent dark navy and cyan visual system. The work included:
 
 - Recreating and refining the supplied dashboard design.
@@ -26,6 +28,11 @@ The original dashboard was expanded into a complete multi-page internal portal w
 - Reorganising the Overview page around Quick Actions and two full-width summary tables.
 - Supporting custom reporting date ranges in addition to standard periods.
 - Restricting export actions to the Reports and Analytics areas rather than the Overview page.
+- Rebuilding Case Detail as a reference-aligned 2 × 2 operational workspace.
+- Adding a rich six-stage workflow with dates, icons, semantic progress, current-stage illumination, layered strokes, and opacity fades.
+- Replacing the native case-officer popup with a branded accessible listbox.
+- Adding court-progress, evidence-summary, incident-metadata, and preserved secondary-operation surfaces.
+- Replacing the small Overview title strip with a large personalized operational welcome hero.
 
 ## 3. Design direction and references
 
@@ -107,6 +114,8 @@ The lower four cards were consolidated into two separate table rows:
 
 The Overview Export Report button was removed. Exporting belongs to Reports and Analytics, where filtering and report context are available.
 
+The page now opens with a large welcome hero below the utility bar. It greets the current officer, presents live active and priority case signals, links into the case workspace and alert review, carries RPNGC Cyber Unit visual branding, and retains the date-period controls along its lower edge.
+
 ### 6.2 Cases
 
 The Cases register provides search across case reference, complainant, platform, and province; stage and priority filters; a contextual Reset Filters button; result count; branded controls; a padded and horizontally accessible table; direct case-detail navigation; and an empty state.
@@ -118,6 +127,8 @@ The filter toolbar, table container, and page boundary were given consistent spa
 The Case Detail page includes back navigation, case metadata, officer assignment, workflow progression, incident and Section 23 context, party information, evidence, timeline, investigation notes, court-decision recording, and victim remedies.
 
 The workflow covers Filed, Evidence, Investigation, Charged, In Court, and Resolved. Panels, page edges, headings, and actions were standardised to the application spacing system. The officer assignment control is constrained and branded rather than stretching across the page.
+
+The route was subsequently rebuilt around the supplied visual reference. Workflow and court form the top row; incident and evidence form the second row. The current stage uses a radial gradient wash, layered border strokes, a masked top fade, multiple node rings, and a connector that fades to full transparency before the pending stage. Court facts, evidence visualization, and complete secondary case operations remain accessible. Officer assignment now uses a custom keyboard-accessible branded dropdown rather than the operating system's native popup.
 
 ### 6.4 Reports
 
@@ -257,6 +268,12 @@ Responsive work includes KPI layouts collapsing from four columns to two and one
 | `src/pages/UsersPage.tsx` | Users, roles, permissions, and account actions |
 | `src/pages/ProfilePage.tsx` | Current officer profile and workload |
 | `src/pages/SettingsPage.tsx` | System configuration |
+| `src/components/case/CaseWorkflow.tsx` | Rich six-stage workflow and progress |
+| `src/components/case/CourtProgress.tsx` | Court illustration and hearing facts |
+| `src/components/case/EvidenceSummary.tsx` | Evidence visualization and navigation |
+| `src/components/case/IncidentDetails.tsx` | Incident statute and metadata cells |
+| `src/components/case/OfficerSelect.tsx` | Branded accessible officer dropdown |
+| `src/lib/caseDetail.ts` | Case-detail workflow and evidence helpers |
 
 ## 13. Local development and validation
 
@@ -324,6 +341,13 @@ Recommended additions include unit tests for date ranges and filters, workflow i
 20. Added custom report dates with validation and recalculation.
 21. Added the global utility bar with live search, notifications, and profile menu.
 22. Removed Overview export so exports remain in reporting workflows.
+23. Audited the supplied Case Detail reference and created phased implementation documents.
+24. Rebuilt Case Detail as a compact 2 × 2 operational workspace.
+25. Added the rich workflow, semantic progress, court summary, evidence donut, and incident metadata grid.
+26. Refined the active stage with gradient illumination, double strokes, node glow, and vertical opacity masking.
+27. Refined the workflow connector to fade through alpha into full transparency after the current stage.
+28. Replaced the native officer picker with a branded accessible dropdown.
+29. Added the large personalized Overview welcome hero with live operational status and entry actions.
 
 ## 16. Handover status
 
