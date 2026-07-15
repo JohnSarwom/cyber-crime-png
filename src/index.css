@@ -1429,7 +1429,7 @@ button { cursor: pointer; }
 }
 .portal::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
-  background: url('/portal-backdrop.png') center center / cover no-repeat;
+  background: url('/portal-backdrop.webp') center center / cover no-repeat;
 }
 .portal::after {
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
