@@ -1,32 +1,32 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert, Bell, Check, Clock, Folder, Settings, ShieldLock, User } from '../components/icons'
 import { PriorityBadge, StageBadge } from '../components/badges'
 import { fmtDate } from '../lib/format'
-import { CURRENT_OFFICER, useCases } from '../lib/store'
+import { useCases } from '../lib/store'
+import { officerInitials, useAuth } from '../lib/authStore'
 
-const PROFILE_STORAGE = 'rpngc-profile-v1'
 interface OfficerProfile { email: string; phone: string; unit: string; dutyStation: string }
-const defaults: OfficerProfile = { email: 'l.waiko@rpngc.gov.pg', phone: '+675 322 6100', unit: 'Cyber Unit Command', dutyStation: 'Police Headquarters, Konedobu' }
-
-function loadProfile() {
-  try { return { ...defaults, ...JSON.parse(localStorage.getItem(PROFILE_STORAGE) || '{}') } as OfficerProfile } catch { return defaults }
-}
 
 export default function ProfilePage() {
-  const { cases } = useCases()
+  const { allCases: cases } = useCases()
+  const { activeOfficer } = useAuth()
+  const profileKey = `rpngc-profile-${activeOfficer.id}`
+  const defaults: OfficerProfile = { email: activeOfficer.email, phone: '+675 322 6100', unit: activeOfficer.unit, dutyStation: 'Police Headquarters, Konedobu' }
+  const loadProfile = () => { try { return { ...defaults, ...JSON.parse(localStorage.getItem(profileKey) || '{}') } as OfficerProfile } catch { return defaults } }
   const [profile, setProfile] = useState<OfficerProfile>(loadProfile)
   const [message, setMessage] = useState('')
   const [preferences, setPreferences] = useState({ critical: true, assignments: true, digest: false, browser: true })
-  const assigned = useMemo(() => cases.filter((item) => item.assignedTo === CURRENT_OFFICER), [cases])
+  useEffect(() => { setProfile(loadProfile()); setMessage('') }, [activeOfficer.id])
+  const assigned = useMemo(() => cases.filter((item) => item.assignedTo === activeOfficer.name), [cases, activeOfficer.name])
   const active = assigned.filter((item) => item.stage !== 'resolved')
   const risk = active.filter((item) => item.priority === 'critical' || item.priority === 'high')
   const resolved = assigned.filter((item) => item.stage === 'resolved')
-  const noteCount = cases.reduce((total, item) => total + item.notes.filter((note) => note.officer === CURRENT_OFFICER).length, 0)
+  const noteCount = cases.reduce((total, item) => total + item.notes.filter((note) => note.officer === activeOfficer.name).length, 0)
 
   function saveProfile(event: FormEvent) {
     event.preventDefault()
-    localStorage.setItem(PROFILE_STORAGE, JSON.stringify(profile))
+    localStorage.setItem(profileKey, JSON.stringify(profile))
     setMessage('Profile changes saved successfully.')
   }
 
@@ -36,8 +36,8 @@ export default function ProfilePage() {
       <span className="profile-access"><ShieldLock width={16} height={16} /> Restricted account</span>
     </header>
     <section className="profile-hero">
-      <div className="profile-avatar-large">LW<i /></div>
-      <div className="profile-identity"><span>Online · Duty officer</span><h2>{CURRENT_OFFICER}</h2><p>Administrator · {profile.unit}</p><div><b>Badge ID</b> RPNGC-CU-014 <b>Rank</b> Inspector</div></div>
+      <div className="profile-avatar-large">{officerInitials(activeOfficer.name)}<i /></div>
+      <div className="profile-identity"><span>{activeOfficer.status} · Active account</span><h2>{activeOfficer.name}</h2><p>{activeOfficer.role} · {profile.unit}</p><div><b>Badge ID</b> {activeOfficer.badge} <b>Role</b> {activeOfficer.role}</div></div>
       <div className="profile-security-summary"><ShieldLock width={22} height={22} /><div><strong>Account protected</strong><span>Multi-factor authentication enabled</span></div></div>
     </section>
     <section className="profile-kpis" aria-label="Officer workload">
@@ -50,7 +50,7 @@ export default function ProfilePage() {
       <section className="profile-card profile-details-card">
         <div className="profile-card-head"><div><span>Personal details</span><h2>Officer information</h2></div><User width={20} height={20} /></div>
         <form onSubmit={saveProfile}>
-          <label><span>Full name</span><input value={CURRENT_OFFICER} disabled /></label>
+          <label><span>Full name</span><input value={activeOfficer.name} disabled /></label>
           <label><span>Official email</span><input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} /></label>
           <label><span>Contact number</span><input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} /></label>
           <label><span>Operational unit</span><input value={profile.unit} onChange={(e) => setProfile({ ...profile, unit: e.target.value })} /></label>

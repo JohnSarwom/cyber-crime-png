@@ -105,7 +105,7 @@ function WorkflowTracker({ stage, decision }: { stage: CaseRecord['stage']; deci
 /* ------------------------------------------------------------------ */
 
 export default function PortalPage() {
-  const { cases, submitComplaint } = useCases()
+  const { allCases: cases, submitComplaint } = useCases()
 
   const [view, setView] = useState<'home' | 'wizard' | 'done'>('home')
   const [step, setStep] = useState(0)

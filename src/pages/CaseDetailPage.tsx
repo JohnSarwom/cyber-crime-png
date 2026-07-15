@@ -11,6 +11,7 @@ import { CourtProgress } from '../components/case/CourtProgress'
 import { EvidenceSummary } from '../components/case/EvidenceSummary'
 import { IncidentDetails } from '../components/case/IncidentDetails'
 import { OfficerSelect } from '../components/case/OfficerSelect'
+import { useAuth } from '../lib/authStore'
 
 function SecondaryPanel({ title, id, children, className = '' }: { title: string; id?: string; children: ReactNode; className?: string }) {
   return <section id={id} className={`case-panel case-secondary-panel ${className}`} tabIndex={id ? -1 : undefined}><h2 className="case-panel__title">{title}</h2>{children}</section>
@@ -24,8 +25,10 @@ export default function CaseDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { cases, advance, assign, addNote, setDecision } = useCases()
+  const { activeOfficer } = useAuth()
   const [noteText, setNoteText] = useState('')
   const [noteStatus, setNoteStatus] = useState('')
+  const [approvalComment, setApprovalComment] = useState('')
 
   const c = cases.find((item) => item.id === id)
   if (!c) {
@@ -34,6 +37,8 @@ export default function CaseDetailPage() {
 
   const next = nextStage(c.stage)
   const needsDecision = c.stage === 'in_court' && !c.decision
+  const canAssign = activeOfficer.role === 'Administrator' || activeOfficer.role === 'Supervisor'
+  const canApprove = canAssign || activeOfficer.role === 'Investigator'
 
   return (
     <article className="case-detail-page">
@@ -51,11 +56,13 @@ export default function CaseDetailPage() {
         </div>
 
         <div className="case-detail-actions">
-          <OfficerSelect value={c.assignedTo} options={OFFICERS} onChange={(officer) => assign(c.id, officer)} />
-          {next && <button type="button" className="case-primary-action" disabled={needsDecision} aria-describedby={needsDecision ? 'advance-prerequisite' : undefined} onClick={() => advance(c.id)}>
-            <span>Advance to {stageOf(next).short}</span><Chevron width={20} height={20} aria-hidden="true" />
+          {canAssign && <OfficerSelect value={c.assignedTo} options={OFFICERS} onChange={(officer) => assign(c.id, officer)} />}
+          {next && canApprove && <textarea className="case-approval-comment" rows={2} value={approvalComment} onChange={(event) => setApprovalComment(event.target.value)} placeholder={`Add ${stageOf(next).short.toLowerCase()} approval comment...`} aria-label="Approval comment" />}
+          {next && canApprove && <button type="button" className="case-primary-action" disabled={needsDecision || !approvalComment.trim()} aria-describedby={needsDecision ? 'advance-prerequisite' : undefined} onClick={() => { addNote(c.id, `Approved for ${stageOf(next).label}: ${approvalComment.trim()}`); advance(c.id, approvalComment.trim()); setApprovalComment('') }}>
+            <span>Approve & advance to {stageOf(next).short}</span><Chevron width={20} height={20} aria-hidden="true" />
           </button>}
           {needsDecision && <p id="advance-prerequisite" className="case-action-requirement">Record the court decision before resolving this case.</p>}
+          {next && !canApprove && <p className="case-action-requirement">Your {activeOfficer.role.toLowerCase()} account has view-only access to case progression.</p>}
         </div>
       </header>
 
@@ -119,11 +126,11 @@ export default function CaseDetailPage() {
 
           <SecondaryPanel title="Case notes" className="case-secondary-wide">
             {c.notes.length ? <ul className="case-notes-list">{c.notes.map((note, index) => <li key={`${note.date}-${index}`}><time dateTime={note.date}>{fmtDateTime(note.date)} · {note.officer}</time><p>{note.text}</p></li>)}</ul> : <p className="case-panel-note">No notes yet.</p>}
-            <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim()) return; addNote(c.id, noteText.trim()); setNoteText(''); setNoteStatus('Note added') }}>
+            {canApprove && <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim()) return; addNote(c.id, noteText.trim()); setNoteText(''); setNoteStatus('Note added') }}>
               <label htmlFor="case-note">Add an investigation note</label>
               <div><input id="case-note" className="case-control" placeholder="Write a concise case update…" value={noteText} onChange={(event) => { setNoteText(event.target.value); setNoteStatus('') }} /><button type="submit" className="case-control" disabled={!noteText.trim()}>Add note</button></div>
               <span className="sr-only" role="status" aria-live="polite">{noteStatus}</span>
-            </form>
+            </form>}
           </SecondaryPanel>
         </div>
       </section>

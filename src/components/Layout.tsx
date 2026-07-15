@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { CURRENT_OFFICER, useCases } from '../lib/store'
-import { useAuth } from '../lib/authStore'
+import { useCases } from '../lib/store'
+import { OFFICER_ACCOUNTS, officerInitials, useAuth } from '../lib/authStore'
 import {
   Analytics, Bell, Folder, Grid, Logout, Reports, Search, Settings, User, Users,
 } from './icons'
@@ -18,7 +18,8 @@ const nav = [
 
 export default function Layout() {
   const { cases } = useCases()
-  const { logout } = useAuth()
+  const { activeOfficer, switchOfficer, logout } = useAuth()
+  const initials = officerInitials(activeOfficer.name)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -53,7 +54,7 @@ export default function Layout() {
         </div>
 
         <nav className="side-nav" aria-label="Primary navigation">
-          {nav.map(({ to, label, Icon, end }) => (
+          {nav.filter((item) => activeOfficer.role === 'Administrator' || (item.to !== '/users' && item.to !== '/settings')).map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -68,7 +69,7 @@ export default function Layout() {
           <NavLink
             to="/profile"
             className={({ isActive }) => `side-link sidebar-profile-nav ${isActive ? 'active' : ''}`}
-            title={`${CURRENT_OFFICER} · Duty Officer · Online`}
+            title={`${activeOfficer.name} · ${activeOfficer.role} · ${activeOfficer.status}`}
           >
             <span className="officer-avatar"><User width={20} height={20} /><i /></span>
             <span>Profile</span>
@@ -124,9 +125,15 @@ export default function Layout() {
             </details>
 
             <details className="utility-menu profile-utility-menu">
-              <summary><span className="utility-avatar">LW<i /></span><span className="utility-officer"><strong>{CURRENT_OFFICER}</strong><small>Duty Officer</small></span></summary>
+              <summary><span className="utility-avatar">{initials}<i /></span><span className="utility-officer"><strong>{activeOfficer.name}</strong><small>{activeOfficer.role}</small></span></summary>
               <div className="utility-popover profile-popover">
-                <div className="profile-popover-identity"><span className="utility-avatar large">LW<i /></span><div><strong>{CURRENT_OFFICER}</strong><small>l.waiko@rpngc.gov.pg</small><em>Administrator · Cyber Unit</em></div></div>
+                <div className="profile-popover-identity"><span className="utility-avatar large">{initials}<i /></span><div><strong>{activeOfficer.name}</strong><small>{activeOfficer.email}</small><em>{activeOfficer.role} · {activeOfficer.unit}</em></div></div>
+                <div className="account-switcher">
+                  <span>Switch officer account</span>
+                  {OFFICER_ACCOUNTS.filter((officer) => officer.status !== 'suspended').map((officer) => <button key={officer.id} type="button" className={officer.id === activeOfficer.id ? 'active' : ''} onClick={() => { switchOfficer(officer.id); if (officer.role !== 'Administrator' && (location.pathname.startsWith('/users') || location.pathname.startsWith('/settings'))) navigate('/') }}>
+                    <i>{officerInitials(officer.name)}</i><span><strong>{officer.name}</strong><small>{officer.role} · {officer.unit}</small></span>{officer.id === activeOfficer.id && <b>Current</b>}
+                  </button>)}
+                </div>
                 <nav><Link to="/profile"><User width={16} height={16} /><span>My profile</span></Link><Link to="/settings"><Settings width={16} height={16} /><span>Settings</span></Link><button type="button" onClick={handleLogout}><Logout width={16} height={16} /><span>Log out</span></button></nav>
               </div>
             </details>

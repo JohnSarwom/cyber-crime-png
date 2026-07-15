@@ -1,9 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Alert, Check, Clock, Plus, Search, Settings, ShieldLock, User, Users } from '../components/icons'
 import { useCases } from '../lib/store'
+import { OFFICER_ACCOUNTS, useAuth, type OfficerRole, type OfficerStatus } from '../lib/authStore'
 
-type UserRole = 'Administrator' | 'Supervisor' | 'Investigator' | 'Analyst' | 'Read Only'
-type UserStatus = 'online' | 'active' | 'away' | 'suspended'
+type UserRole = OfficerRole
+type UserStatus = OfficerStatus
 
 interface SystemUser {
   id: string
@@ -24,27 +25,20 @@ const PERMISSIONS: Record<UserRole, string[]> = {
   'Read Only': ['View permitted cases', 'View reports', 'View analytics'],
 }
 
-const INITIAL_USERS: SystemUser[] = [
-  { id: 'u1', name: 'Insp. L. Waiko', email: 'l.waiko@rpngc.gov.pg', role: 'Administrator', status: 'online', unit: 'Cyber Unit Command', lastActive: 'Online now' },
-  { id: 'u2', name: 'Sgt. M. Kaupa', email: 'm.kaupa@rpngc.gov.pg', role: 'Supervisor', status: 'online', unit: 'Investigations', lastActive: 'Online now' },
-  { id: 'u3', name: 'Const. J. Temu', email: 'j.temu@rpngc.gov.pg', role: 'Investigator', status: 'active', unit: 'Digital Evidence', lastActive: '12 minutes ago' },
-  { id: 'u4', name: 'Sgt. R. Auali', email: 'r.auali@rpngc.gov.pg', role: 'Supervisor', status: 'away', unit: 'Case Assessment', lastActive: '1 hour ago' },
-  { id: 'u5', name: 'Det. P. Kila', email: 'p.kila@rpngc.gov.pg', role: 'Investigator', status: 'active', unit: 'Investigations', lastActive: '34 minutes ago' },
-  { id: 'u6', name: 'M. Natera', email: 'm.natera@nicta.gov.pg', role: 'Analyst', status: 'active', unit: 'NICTA Liaison', lastActive: 'Yesterday, 16:42' },
-  { id: 'u7', name: 'E. Gima', email: 'e.gima@rpngc.gov.pg', role: 'Read Only', status: 'suspended', unit: 'Records Registry', lastActive: '9 Jul 2026' },
-]
+const INITIAL_USERS: SystemUser[] = OFFICER_ACCOUNTS.map(({ id, name, email, role, status, unit, lastActive }) => ({ id, name, email, role, status, unit, lastActive }))
 
 function initials(name: string) {
   return name.replace(/^(Insp\.|Sgt\.|Const\.|Det\.)\s*/, '').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
 }
 
 export default function UsersPage() {
-  const { cases } = useCases()
+  const { allCases: cases } = useCases()
+  const { activeOfficer, switchOfficer } = useAuth()
   const [users, setUsers] = useState<SystemUser[]>(INITIAL_USERS)
   const [query, setQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all')
-  const [selectedId, setSelectedId] = useState('u1')
+  const [selectedId, setSelectedId] = useState(activeOfficer.id)
   const [showAddUser, setShowAddUser] = useState(false)
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
@@ -132,7 +126,7 @@ export default function UsersPage() {
           <div className="user-detail-profile"><span>{initials(selected.name)}<i className={selected.status} /></span><div><small>Selected account</small><h2>{selected.name}</h2><p>{selected.email}</p></div></div>
           <div className="user-detail-facts"><div><Settings width={15} height={15} /><span>Role</span><strong>{selected.role}</strong></div><div><Users width={15} height={15} /><span>Unit</span><strong>{selected.unit}</strong></div><div><Clock width={15} height={15} /><span>Last active</span><strong>{selected.lastActive}</strong></div><div><User width={15} height={15} /><span>Active workload</span><strong>{workload[selected.name] ?? 0} cases</strong></div></div>
           <div className="permission-panel"><span>Effective permissions</span><ul>{PERMISSIONS[selected.role].map((permission) => <li key={permission}><Check width={13} height={13} />{permission}</li>)}</ul></div>
-          <div className="user-detail-actions"><button type="button" className={selected.status === 'suspended' ? 'reactivate' : 'suspend'} onClick={() => toggleSuspended(selected.id)}>{selected.status === 'suspended' ? 'Reactivate account' : 'Suspend account'}</button><button type="button" className="reset-access" onClick={() => setActionMessage(`Password reset instructions queued for ${selected.email}.`)}>Send password reset</button></div>
+          <div className="user-detail-actions"><button type="button" className="switch-account-action" disabled={selected.id === activeOfficer.id || selected.status === 'suspended'} onClick={() => { switchOfficer(selected.id); setActionMessage(`Dashboard switched to ${selected.name}.`) }}>{selected.id === activeOfficer.id ? 'Current dashboard account' : `Switch to ${selected.name}`}</button><button type="button" className={selected.status === 'suspended' ? 'reactivate' : 'suspend'} onClick={() => toggleSuspended(selected.id)}>{selected.status === 'suspended' ? 'Reactivate account' : 'Suspend account'}</button><button type="button" className="reset-access" onClick={() => setActionMessage(`Password reset instructions queued for ${selected.email}.`)}>Send password reset</button></div>
           <p className="access-note"><ShieldLock width={13} height={13} /> {actionMessage || 'Role and status changes apply immediately to this local demonstration.'}</p>
         </aside>}
       </section>

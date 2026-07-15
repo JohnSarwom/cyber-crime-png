@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CURRENT_OFFICER, useCases } from '../lib/store'
+import { useCases } from '../lib/store'
+import { useAuth } from '../lib/authStore'
 import {
   Alert, Bell, Calendar, Check, Chevron, Clock, Doc, Gavel, MapPin, Plus, Search,
   ShieldLock, User,
@@ -62,14 +63,22 @@ function TrendChart({ ratio }: { ratio: number }) {
 
 export default function OverviewPage() {
   const { cases } = useCases()
+  const { activeOfficer } = useAuth()
   const [range, setRange] = useState<(typeof ranges)[number]['id']>('90')
   const selected = ranges.find(r => r.id === range)!
   const activeCaseCount = useMemo(() => cases.filter(caseRecord => caseRecord.stage !== 'resolved').length, [cases])
   const priorityCaseCount = useMemo(() => cases.filter(caseRecord => caseRecord.stage !== 'resolved' && (caseRecord.priority === 'critical' || caseRecord.priority === 'high')).length, [cases])
-  const welcomeName = CURRENT_OFFICER.replace('Insp.', 'Inspector')
-  const totals = useMemo(() => ({
-    new: Math.round(52 * selected.ratio), active: Math.round(23 * selected.ratio), charged: Math.round(19 * selected.ratio), resolved: Math.round(6 * selected.ratio),
-  }), [selected])
+  const welcomeName = activeOfficer.name.replace('Insp.', 'Inspector')
+  const totals = useMemo(() => {
+    const cutoff = Date.now() - Number(selected.id) * 86_400_000
+    const inRange = cases.filter((item) => new Date(item.filedAt).getTime() >= cutoff)
+    return {
+      new: inRange.length,
+      active: inRange.filter((item) => item.stage === 'evidence_review' || item.stage === 'investigation').length,
+      charged: inRange.filter((item) => item.stage === 'charges_filed' || item.stage === 'in_court').length,
+      resolved: inRange.filter((item) => item.stage === 'resolved').length,
+    }
+  }, [cases, selected.id])
 
   const categories = [
     ['Online Harassment', 32, '#1477ef'], ['Threats & Intimidation', 12, '#793bd0'], ['Identity Misuse', 6, '#23a943'], ['Other', 2, '#ed7905'],

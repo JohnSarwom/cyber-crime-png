@@ -2,14 +2,13 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import type { CaseRecord, CaseStage, ComplaintInput, DecisionOutcome } from './types'
 import { generateCases } from './mock'
 import { nextStage } from './pipeline'
+import { useAuth } from './authStore'
 
 const STORAGE_KEY = 'rpngc-cases-v1'
 
-/** Signed in officer (mock — auth is a later phase). */
-export const CURRENT_OFFICER = 'Insp. L. Waiko'
-
 interface CaseContextValue {
   cases: CaseRecord[]
+  allCases: CaseRecord[]
   advance: (id: string, note?: string) => void
   assign: (id: string, officer: string) => void
   addNote: (id: string, text: string) => void
@@ -50,11 +49,14 @@ function persist(cases: CaseRecord[]) {
 }
 
 export function CaseProvider({ children }: { children: ReactNode }) {
-  const [cases, setCases] = useState<CaseRecord[]>(load)
+  const [allCases, setAllCases] = useState<CaseRecord[]>(load)
+  const { activeOfficer } = useAuth()
+  const canViewAll = activeOfficer.role === 'Administrator' || activeOfficer.role === 'Supervisor'
+  const cases = canViewAll ? allCases : allCases.filter((item) => item.assignedTo === activeOfficer.name)
 
   const value = useMemo<CaseContextValue>(() => {
     const update = (fn: (prev: CaseRecord[]) => CaseRecord[]) =>
-      setCases((prev) => {
+      setAllCases((prev) => {
         const next = fn(prev)
         persist(next)
         return next
@@ -62,6 +64,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
 
     return {
       cases,
+      allCases,
       advance: (id, note) =>
         update((prev) =>
           prev.map((c) => {
@@ -71,7 +74,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
             const event = {
               stage: to as CaseStage,
               date: new Date().toISOString(),
-              officer: CURRENT_OFFICER,
+              officer: activeOfficer.name,
               note,
             }
             return { ...c, stage: to, timeline: [...c.timeline, event] }
@@ -87,7 +90,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
                   ...c,
                   notes: [
                     ...c.notes,
-                    { date: new Date().toISOString(), officer: CURRENT_OFFICER, text },
+                    { date: new Date().toISOString(), officer: activeOfficer.name, text },
                   ],
                 }
               : c,
@@ -101,7 +104,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
         // stable across React's StrictMode double-invocation of the updater.
         const record: CaseRecord = {
           id: `pub-${Date.now()}`,
-          ref: nextRef(cases),
+          ref: nextRef(allCases),
           filedAt: now,
           stage: 'filed',
           priority: input.immediateDanger ? 'critical' : input.severity,
@@ -135,10 +138,10 @@ export function CaseProvider({ children }: { children: ReactNode }) {
       },
       resetData: () => {
         localStorage.removeItem(STORAGE_KEY)
-        setCases(generateCases())
+        setAllCases(generateCases())
       },
     }
-  }, [cases])
+  }, [cases, allCases, activeOfficer.name])
 
   return <CaseContext.Provider value={value}>{children}</CaseContext.Provider>
 }
