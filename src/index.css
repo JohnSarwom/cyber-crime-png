@@ -1373,7 +1373,18 @@ button { cursor: pointer; }
 /* ========================================================================
    Public client portal  (route: /portal)
    ===================================================================== */
-.portal { min-height: 100vh; display: flex; flex-direction: column; }
+.portal {
+  position: relative; isolation: isolate; min-height: 100vh; display: flex; flex-direction: column;
+  background: #020b1d;
+}
+.portal::before {
+  content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: url('/portal-backdrop.png') center center / cover no-repeat;
+}
+.portal::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(1, 9, 24, .24), rgba(1, 9, 24, .48)), radial-gradient(circle at 50% 45%, rgba(2, 17, 39, .1), rgba(1, 8, 21, .42));
+}
 
 /* Portal / officer view switch (shared: officer utility bar + portal header) */
 .portal-switch {
