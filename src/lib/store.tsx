@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { CaseRecord, CaseStage, ComplaintInput, DecisionOutcome } from './types'
+import type { CaseRecord, CaseStage, ComplaintInput, DecisionOutcome, EvidenceFileMeta } from './types'
 import { generateCases } from './mock'
 import { nextStage } from './pipeline'
 import { useAuth } from './authStore'
@@ -11,7 +11,7 @@ interface CaseContextValue {
   allCases: CaseRecord[]
   advance: (id: string, note?: string) => void
   assign: (id: string, officer: string) => void
-  addNote: (id: string, text: string) => void
+  addNote: (id: string, text: string, attachments?: EvidenceFileMeta[]) => void
   setDecision: (id: string, decision: DecisionOutcome) => void
   /** Lodge a complaint from the public client portal; returns the created record. */
   submitComplaint: (input: ComplaintInput) => CaseRecord
@@ -82,7 +82,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
         ),
       assign: (id, officer) =>
         update((prev) => prev.map((c) => (c.id === id ? { ...c, assignedTo: officer } : c))),
-      addNote: (id, text) =>
+      addNote: (id, text, attachments = []) =>
         update((prev) =>
           prev.map((c) =>
             c.id === id
@@ -90,7 +90,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
                   ...c,
                   notes: [
                     ...c.notes,
-                    { date: new Date().toISOString(), officer: activeOfficer.name, text },
+                    { date: new Date().toISOString(), officer: activeOfficer.name, text, attachments },
                   ],
                 }
               : c,

@@ -38,6 +38,7 @@ export interface CaseNote {
   date: string // ISO
   officer: string
   text: string
+  attachments?: EvidenceFileMeta[]
 }
 
 export interface CaseRecord {

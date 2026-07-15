@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../lib/store'
 import { DECISIONS, EVIDENCE_TYPES, OFFICERS, nextStage, stageOf } from '../lib/pipeline'
-import type { DecisionOutcome } from '../lib/types'
+import type { DecisionOutcome, EvidenceFileMeta } from '../lib/types'
 import { fmtDate, fmtDateTime } from '../lib/format'
 import { PriorityBadge, StageBadge } from '../components/badges'
-import { Check, Chevron, Gavel, Scales } from '../components/icons'
+import { Check, Chevron, Doc, Gavel, Scales } from '../components/icons'
 import { CaseWorkflow } from '../components/case/CaseWorkflow'
 import { CourtProgress } from '../components/case/CourtProgress'
 import { EvidenceSummary } from '../components/case/EvidenceSummary'
@@ -27,6 +27,7 @@ export default function CaseDetailPage() {
   const { cases, advance, assign, addNote, setDecision } = useCases()
   const { activeOfficer } = useAuth()
   const [noteText, setNoteText] = useState('')
+  const [noteFiles, setNoteFiles] = useState<EvidenceFileMeta[]>([])
   const [noteStatus, setNoteStatus] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
 
@@ -125,10 +126,12 @@ export default function CaseDetailPage() {
           </SecondaryPanel>
 
           <SecondaryPanel title="Case notes" className="case-secondary-wide">
-            {c.notes.length ? <ul className="case-notes-list">{c.notes.map((note, index) => <li key={`${note.date}-${index}`}><time dateTime={note.date}>{fmtDateTime(note.date)} · {note.officer}</time><p>{note.text}</p></li>)}</ul> : <p className="case-panel-note">No notes yet.</p>}
-            {canApprove && <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim()) return; addNote(c.id, noteText.trim()); setNoteText(''); setNoteStatus('Note added') }}>
+            {c.notes.length ? <ul className="case-notes-list">{c.notes.map((note, index) => <li key={`${note.date}-${index}`}><time dateTime={note.date}>{fmtDateTime(note.date)} · {note.officer}</time><p>{note.text}</p>{!!note.attachments?.length && <ul className="case-note-attachments">{note.attachments.map((file) => <li key={`${file.name}-${file.size}`}><Doc width={14} height={14} aria-hidden="true" /><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small></li>)}</ul>}</li>)}</ul> : <p className="case-panel-note">No notes yet.</p>}
+            {canApprove && <form className="case-note-form" onSubmit={(event) => { event.preventDefault(); if (!noteText.trim() && !noteFiles.length) return; addNote(c.id, noteText.trim() || 'Attachment added.', noteFiles); setNoteText(''); setNoteFiles([]); setNoteStatus(`Note added${noteFiles.length ? ` with ${noteFiles.length} attachment${noteFiles.length === 1 ? '' : 's'}` : ''}`) }}>
               <label htmlFor="case-note">Add an investigation note</label>
-              <div><input id="case-note" className="case-control" placeholder="Write a concise case update…" value={noteText} onChange={(event) => { setNoteText(event.target.value); setNoteStatus('') }} /><button type="submit" className="case-control" disabled={!noteText.trim()}>Add note</button></div>
+              <div className="case-note-compose"><input id="case-note" className="case-control" placeholder="Write a concise case update…" value={noteText} onChange={(event) => { setNoteText(event.target.value); setNoteStatus('') }} /><label className="case-note-attach"><Doc width={16} height={16} aria-hidden="true" /><span>Attach</span><input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" aria-label="Attach files to investigation note" onChange={(event) => { const selected = Array.from(event.target.files ?? []).map(({ name, size, type }) => ({ name, size, type })); setNoteFiles((current) => [...current, ...selected.filter((file) => !current.some((saved) => saved.name === file.name && saved.size === file.size))].slice(0, 8)); setNoteStatus(''); event.currentTarget.value = '' }} /></label><button type="submit" className="case-control" disabled={!noteText.trim() && !noteFiles.length}>Add note</button></div>
+              {!!noteFiles.length && <ul className="case-note-pending-files">{noteFiles.map((file) => <li key={`${file.name}-${file.size}`}><Doc width={14} height={14} aria-hidden="true" /><span>{file.name}</span><small>{Math.max(1, Math.round(file.size / 1024))} KB</small><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setNoteFiles((current) => current.filter((item) => !(item.name === file.name && item.size === file.size)))}>×</button></li>)}</ul>}
+              <small className="case-note-file-help">Up to 8 images, recordings, PDFs or documents. Attachments remain in this browser-only demonstration.</small>
               <span className="sr-only" role="status" aria-live="polite">{noteStatus}</span>
             </form>}
           </SecondaryPanel>
