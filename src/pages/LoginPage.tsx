@@ -74,7 +74,7 @@ export default function LoginPage() {
   return (
     <div className="login-screen">
       {/* Full-bleed brand artwork (crest, map + hooded-figure scene) */}
-      <img className="login-backdrop" src="/login-backdrop.png" alt="" aria-hidden="true" />
+      <img className="login-backdrop" src="/login-backdrop.webp" alt="" aria-hidden="true" />
       <div className="login-scrim" aria-hidden="true" />
 
       {/* Top-left wordmark */}
