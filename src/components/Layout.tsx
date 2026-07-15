@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCases } from '../lib/store'
 import { OFFICER_ACCOUNTS, officerInitials, useAuth } from '../lib/authStore'
@@ -22,6 +22,39 @@ export default function Layout() {
   const initials = officerInitials(activeOfficer.name)
   const navigate = useNavigate()
   const location = useLocation()
+  const notificationMenuRef = useRef<HTMLDetailsElement>(null)
+  const profileMenuRef = useRef<HTMLDetailsElement>(null)
+
+  function closeUtilityMenus() {
+    if (notificationMenuRef.current) notificationMenuRef.current.open = false
+    if (profileMenuRef.current) profileMenuRef.current.open = false
+  }
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node
+      if (notificationMenuRef.current?.open && !notificationMenuRef.current.contains(target)) notificationMenuRef.current.open = false
+      if (profileMenuRef.current?.open && !profileMenuRef.current.contains(target)) profileMenuRef.current.open = false
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      const notificationWasOpen = notificationMenuRef.current?.open
+      const profileWasOpen = profileMenuRef.current?.open
+      closeUtilityMenus()
+      if (profileWasOpen) profileMenuRef.current?.querySelector('summary')?.focus()
+      else if (notificationWasOpen) notificationMenuRef.current?.querySelector('summary')?.focus()
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  useEffect(() => closeUtilityMenus(), [location.pathname])
 
   function handleLogout() {
     logout()
@@ -115,26 +148,26 @@ export default function Layout() {
               </Link>
             </div>
 
-            <details className="utility-menu notification-menu">
+            <details ref={notificationMenuRef} className="utility-menu notification-menu" onToggle={(event) => { if (event.currentTarget.open && profileMenuRef.current) profileMenuRef.current.open = false }}>
               <summary aria-label={`${priorityCases.length} priority notifications`}><Bell width={20} height={20} /><i>{priorityCases.length}</i></summary>
               <div className="utility-popover notification-popover">
-                <div className="utility-popover-head"><span><b>Notifications</b><small>Priority case activity</small></span><Link to="/alerts">View all</Link></div>
-                <div className="notification-list">{priorityCases.map((item) => <Link to={`/cases/${item.id}`} key={item.id}><i className={item.priority} /><span><strong>{item.priority === 'critical' ? 'Critical' : 'High-risk'} case requires review</strong><small>{item.ref} · {item.province}</small></span><em>Now</em></Link>)}</div>
+                <div className="utility-popover-head"><span><b>Notifications</b><small>Priority case activity</small></span><Link to="/alerts" onClick={closeUtilityMenus}>View all</Link></div>
+                <div className="notification-list">{priorityCases.map((item) => <Link to={`/cases/${item.id}`} key={item.id} onClick={closeUtilityMenus}><i className={item.priority} /><span><strong>{item.priority === 'critical' ? 'Critical' : 'High-risk'} case requires review</strong><small>{item.ref} · {item.province}</small></span><em>Now</em></Link>)}</div>
                 {!priorityCases.length && <p className="utility-empty">No priority notifications.</p>}
               </div>
             </details>
 
-            <details className="utility-menu profile-utility-menu">
+            <details ref={profileMenuRef} className="utility-menu profile-utility-menu" onToggle={(event) => { if (event.currentTarget.open && notificationMenuRef.current) notificationMenuRef.current.open = false }}>
               <summary><span className="utility-avatar">{initials}<i /></span><span className="utility-officer"><strong>{activeOfficer.name}</strong><small>{activeOfficer.role}</small></span></summary>
               <div className="utility-popover profile-popover">
                 <div className="profile-popover-identity"><span className="utility-avatar large">{initials}<i /></span><div><strong>{activeOfficer.name}</strong><small>{activeOfficer.email}</small><em>{activeOfficer.role} · {activeOfficer.unit}</em></div></div>
                 <div className="account-switcher">
                   <span>Switch officer account</span>
-                  {OFFICER_ACCOUNTS.filter((officer) => officer.status !== 'suspended').map((officer) => <button key={officer.id} type="button" className={officer.id === activeOfficer.id ? 'active' : ''} onClick={() => { switchOfficer(officer.id); if (officer.role !== 'Administrator' && (location.pathname.startsWith('/users') || location.pathname.startsWith('/settings'))) navigate('/') }}>
+                  {OFFICER_ACCOUNTS.filter((officer) => officer.status !== 'suspended').map((officer) => <button key={officer.id} type="button" className={officer.id === activeOfficer.id ? 'active' : ''} onClick={() => { switchOfficer(officer.id); closeUtilityMenus(); if (officer.role !== 'Administrator' && (location.pathname.startsWith('/users') || location.pathname.startsWith('/settings'))) navigate('/') }}>
                     <i>{officerInitials(officer.name)}</i><span><strong>{officer.name}</strong><small>{officer.role} · {officer.unit}</small></span>{officer.id === activeOfficer.id && <b>Current</b>}
                   </button>)}
                 </div>
-                <nav><Link to="/profile"><User width={16} height={16} /><span>My profile</span></Link><Link to="/settings"><Settings width={16} height={16} /><span>Settings</span></Link><button type="button" onClick={handleLogout}><Logout width={16} height={16} /><span>Log out</span></button></nav>
+                <nav><Link to="/profile" onClick={closeUtilityMenus}><User width={16} height={16} /><span>My profile</span></Link><Link to="/settings" onClick={closeUtilityMenus}><Settings width={16} height={16} /><span>Settings</span></Link><button type="button" onClick={handleLogout}><Logout width={16} height={16} /><span>Log out</span></button></nav>
               </div>
             </details>
           </div>
